@@ -7,7 +7,6 @@ import {
   PlusSquareOutlined, MoreOutlined, PlaySquareOutlined, CommentOutlined
 } from '@ant-design/icons';
 
-// Giả sử Container này bạn đã có sẵn như trong code của bạn
 import Container from "../components/container"; 
 import ListeningHistory from '../components/historyTrack';
 
@@ -17,8 +16,8 @@ const { Text } = Typography;
 const SoundCloudTrack = () => {
   // Dữ liệu giả lập & URL ảnh
   const AVATAR_URL = "https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png";
-  const TRACK_ART_URL = "https://picsum.photos/150"; // Ảnh ngẫu nhiên
-  const WAVEFORM_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Waveform.png/800px-Waveform.png"; // Ảnh sóng âm mẫu
+  const TRACK_ART_URL = "https://picsum.photos/150"; 
+  const WAVEFORM_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Waveform.png/800px-Waveform.png"; 
 
   // Style chung cho nút
   const actionButtonStyle = { color: 'white', fontSize: '14px' };
@@ -29,7 +28,6 @@ const SoundCloudTrack = () => {
     <Card
       style={{
         width: '100%',
-        // maxWidth: 850, // Bỏ maxWidth cứng để nó co giãn theo Col cha
         backgroundColor: '#1c1c1c',
         border: '1px solid #333',
         color: 'white'
@@ -109,12 +107,12 @@ const PageFeed2 = () => {
 
             {/* Khu vực hiển thị danh sách bài hát */}
             <div style={{
-              background: "#ccc", // Màu nền cũ của bạn (để test)
+              background: "#ccc", 
               display: "flex",
               alignItems: "center",
               flexDirection: "column",
-              padding: "20px", // Thêm padding để thẻ không dính sát lề
-              gap: "20px"      // Khoảng cách giữa các bài hát
+              padding: "20px", 
+              gap: "20px"      
             }}>
               
               {/* --- Chèn component vào đây --- */}

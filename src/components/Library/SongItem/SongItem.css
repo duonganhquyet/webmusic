@@ -1,0 +1,83 @@
+.song-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.song-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* WRAPPER CHO ẢNH – luôn vuông */
+.song-cover-wrapper {
+  width: 58px;
+  aspect-ratio: 1 / 1;          /* luôn hình vuông */
+  position: relative;
+}
+
+.song-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;            /* fill kín, không méo */
+  border-radius: 8px;
+}
+
+/* PLAY BUTTON */
+.play-btn {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 8px;
+  color: white;
+  font-size: 22px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  cursor: pointer;
+}
+
+.song-cover-wrapper:hover .play-btn {
+  opacity: 1;
+}
+
+.song-info {
+  flex: 1;
+  margin-left: 12px;
+}
+
+.song-title {
+  color: #fff;
+  font-weight: 600;
+  margin: 0;
+}
+
+.song-artist {
+  color: #ccc;
+  margin: 4px 0 0 0;
+  font-size: 13px;
+}
+
+/* ACTION BUTTONS */
+.song-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.like-btn,
+.more-btn {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 0.12s;
+}
+
+.like-btn:hover,
+.more-btn:hover {
+  opacity: 1;
+}

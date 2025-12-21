@@ -14,7 +14,7 @@ const WaveTrack = () => {
     const ctx = canvas.getContext('2d')
 
     const gradientMemo = useMemo (() => {
-        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 0.9)
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 1.15)
         gradient.addColorStop(0, '#656666') // Top color
         gradient.addColorStop((canvas.height * 0.7) / canvas.height, '#656666') // Top color
         gradient.addColorStop((canvas.height * 0.7 + 1) / canvas.height, '#ffffff') // White line
@@ -25,7 +25,7 @@ const WaveTrack = () => {
     }, [])
 
     const progressGradientMemo = useMemo (() => {
-        const progressGradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 0.9)
+        const progressGradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 1.15)
         progressGradient.addColorStop(0, '#EE772F') // Top color
         progressGradient.addColorStop((canvas.height * 0.7) / canvas.height, '#EB4926') // Top color
         progressGradient.addColorStop((canvas.height * 0.7 + 1) / canvas.height, '#ffffff') // White line
@@ -54,11 +54,11 @@ const WaveTrack = () => {
 
     const { wavesurfer, isPlaying, currentTime } = useWavesurfer({
         container: containerRef,
-        height: 80,
+        height: 100,
         waveColor: gradientMemo,
         progressColor: progressGradientMemo,
         url: '../../../public/Mat-Ket-Noi.mp3',
-        barWidth: 2,
+        barWidth: 2.3,
     })
 
 
@@ -119,6 +119,28 @@ const WaveTrack = () => {
                     <div className="img-wrap">
                         <img src={`https://i.pinimg.com/474x/e6/34/d3/e634d384fb0c31d7245d70d6f70f830d.jpg`} alt="" className="img-track"/>
                     </div>
+                    {/* Comment on wave */}
+                    {/* <div className="comments" style={{position:"relative",background: "red",width:"75%",marginLeft:15}}>
+    
+                        {
+                            comments && comments.map((v)=>(
+                                <Tooltip title={v.content} arrow key={v._id}>
+    
+                                <img
+                                onPointerMove={(e)=>{
+                                    const hover = hoverRef.current!;
+                                    hover.style.opacity = "1",
+                                    hover.style.width = calLeft(v.moment);
+                                }}
+                                key={v._id} style={{width:"20px",height:"20px",position:"absolute",bottom:"5px",zIndex:20,
+                                    left: calLeft(v.moment)
+                                }}
+                                src={fetchDefaultImages(v.user.type)} alt="" />
+                                </Tooltip>
+                            ))
+                        }
+                        
+                    </div> */}
                 </div>
                 
             </div>
