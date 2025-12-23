@@ -14,7 +14,6 @@ export const TrackContextProvider = ({ children }) => {
         countPlay: 0,
         uploader: {
             _id: "",
-            email: "",
             name: "",
             role: "",
         },

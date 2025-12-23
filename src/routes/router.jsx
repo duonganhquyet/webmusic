@@ -21,7 +21,7 @@ const router = createBrowserRouter([
       { path: "/feed", element: <PageFeed/> },
       { path: "/feed1", element: <PageFeed2/> },
       {
-        path: "/track",element: <TrackPage/>,
+        path: "/track/:id",element: <TrackPage/>,
       },
       {
         path: "/library",element:<Library/>,

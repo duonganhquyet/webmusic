@@ -13,6 +13,7 @@
     "@ant-design/icons": "^6.1.0",
     "@wavesurfer/react": "^1.0.12",
     "antd": "5.28.1",
+    "axios": "^1.13.2",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-h5-audio-player": "^3.10.1",

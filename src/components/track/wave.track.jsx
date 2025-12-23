@@ -3,11 +3,15 @@ import { PauseCircleFilled, PlayCircleFilled } from "@ant-design/icons";
 import { useRef, useState, useMemo, useCallback, useEffect } from "react";
 import '../../assets/styles/track.css';
 import { useWavesurfer } from '@wavesurfer/react'
+import { useTrackContext } from "../../contexts/track.context";
 
-const WaveTrack = () => {
-    // const [isPlaying,setIsPlaying] = useState(false);
+const WaveTrack = (props) => {
+    const {track,comments} = props;
+    
+    const [isPlaying,setIsPlaying] = useState(false);
     const [time,setTime] = useState("0:00");
     const [duration,setDuration] = useState("0:00");
+    const { currentTrack, setCurrentTrack } = useTrackContext();
     const containerRef = useRef(null);
     const hoverRef = useRef(null);
     const canvas = document.createElement('canvas')
@@ -52,25 +56,40 @@ const WaveTrack = () => {
     }
     
 
-    const { wavesurfer, isPlaying, currentTime } = useWavesurfer({
+    const { wavesurfer, currentTime } = useWavesurfer({
         container: containerRef,
         height: 100,
         waveColor: gradientMemo,
         progressColor: progressGradientMemo,
-        url: '../../../public/Mat-Ket-Noi.mp3',
+        url: `${import.meta.env.VITE_BACKEND_URL}/track/${track?.trackUrl}`,
         barWidth: 2.3,
     })
 
+    useEffect(()=>{
+        if(track?._id && !currentTrack?._id){
+            setCurrentTrack({...track, isPlaying: false})
+            console.log("Check start track", currentTrack?.isPlaying);
+            
+        }
+    },[track])
+
+    useEffect(()=>{
+        if(wavesurfer && currentTrack?.isPlaying){
+            wavesurfer.pause();
+        }
+        console.log("check start track wave", currentTrack?.isPlaying);
+        
+    },[currentTrack])
 
     useEffect(()=>{
         if(!wavesurfer) return;
-        // setIsPlaying(false);
+        setIsPlaying(false);
         const hover = hoverRef.current;
         const waveform = containerRef.current;
         waveform.addEventListener('pointermove', (e) => (hover.style.width = `${e.offsetX}px`));
         const subscriptions = [
-            // wavesurfer.on("play",()=>setIsPlaying(true)),
-            // wavesurfer.on("pause",()=>setIsPlaying(false)),
+            wavesurfer.on("play",()=>setIsPlaying(true)),
+            wavesurfer.on("pause",()=>setIsPlaying(false)),
             wavesurfer.on('decode', (duration) => {
                 setDuration(formatTime(duration));
             }),
@@ -104,43 +123,43 @@ const WaveTrack = () => {
                     <div className="info-track">
                         <div className="info-track_btn" onClick={()=>{
                             onPlayPause();
-                            // if(track && wavesurfer)
-                            //     setCurrentTrack({...currentTrack,isPlaying: false});
+                            if(track && wavesurfer)
+                                setCurrentTrack({...currentTrack,isPlaying: false});
                         }
                         }
                         >
                             {isPlaying === true ? <PauseCircleFilled style={{fontSize:50,color: "#ff6000"}}/> : <PlayCircleFilled style={{fontSize:50,color: "#ff6000"}}/>}
                         </div>
                         <div>
-                            <span className="info-track_title">tiep hehe</span>
-                            <span className="info-track_author">tiep</span>
+                            <span className="info-track_title">{track?.title}</span> 
+                            <span className="info-track_author">{track?.uploader?.name}</span>
                         </div>
                     </div>
                     <div className="img-wrap">
                         <img src={`https://i.pinimg.com/474x/e6/34/d3/e634d384fb0c31d7245d70d6f70f830d.jpg`} alt="" className="img-track"/>
                     </div>
                     {/* Comment on wave */}
-                    {/* <div className="comments" style={{position:"relative",background: "red",width:"75%",marginLeft:15}}>
+                    <div className="comments" style={{position:"relative",background: "red",width:"75%",marginLeft:15}}>
     
                         {
                             comments && comments.map((v)=>(
-                                <Tooltip title={v.content} arrow key={v._id}>
+                                <div title={v.content} arrow key={v._id}>
     
                                 <img
                                 onPointerMove={(e)=>{
-                                    const hover = hoverRef.current!;
+                                    const hover = hoverRef.current;
                                     hover.style.opacity = "1",
                                     hover.style.width = calLeft(v.moment);
                                 }}
-                                key={v._id} style={{width:"20px",height:"20px",position:"absolute",bottom:"5px",zIndex:20,
+                                key={v._id} style={{width:"20px",height:"20px",position:"absolute",bottom:"14px",zIndex:20,
                                     left: calLeft(v.moment)
                                 }}
-                                src={fetchDefaultImages(v.user.type)} alt="" />
-                                </Tooltip>
+                                src={"../public/default-avatar.png"} alt="" />
+                                </div>
                             ))
                         }
                         
-                    </div> */}
+                    </div>
                 </div>
                 
             </div>
