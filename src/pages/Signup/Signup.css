@@ -10,7 +10,7 @@
 }
 
 /* Decorative background elements */
-.signup-container::before {
+/* .signup-container::before {
   content: '';
   position: absolute;
   width: 500px;
@@ -20,9 +20,9 @@
   right: -100px;
   border-radius: 50%;
   pointer-events: none;
-}
+} */
 
-.signup-container::after {
+/* .signup-container::after {
   content: '';
   position: absolute;
   width: 400px;
@@ -32,7 +32,7 @@
   left: -50px;
   border-radius: 50%;
   pointer-events: none;
-}
+} */
 
 .back-home {
   position: absolute;

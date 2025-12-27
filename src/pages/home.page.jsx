@@ -43,14 +43,14 @@ const Home = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#121216', color: 'white' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#121216', color: 'white',paddingTop: '20px', paddingBottom: '40px' }}>
       
       {/* CONTAINER CHÍNH */}
       <div 
         className="container" 
         style={{ 
           maxWidth: '1200px', // Giới hạn chiều rộng để giao diện gọn gàng
-          margin: '30px auto', 
+          margin: '0 auto', 
           padding: '0 20px', 
           display: 'flex',
           gap: '30px',

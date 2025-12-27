@@ -11,6 +11,6 @@ export const fetchSongById = (id) => {
 };
 
 export const fetchCommentById = (id) => {
-    const urlBackend =  `/api/song/${id}/comments`;
+    const urlBackend =  `/api/comments/${id}`;
     return axios.get(urlBackend);
 };
