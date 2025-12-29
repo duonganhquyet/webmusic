@@ -4,6 +4,7 @@ import { useRef, useState, useMemo, useCallback, useEffect } from "react";
 import '../../assets/styles/track.css';
 import { useWavesurfer } from '@wavesurfer/react'
 import { useTrackContext } from "../../contexts/track.context";
+import CommentTrack from "./comment.track";
 
 const WaveTrack = (props) => {
     const {track,comments} = props;
@@ -139,7 +140,7 @@ const WaveTrack = (props) => {
                         <img src={`https://i.pinimg.com/474x/e6/34/d3/e634d384fb0c31d7245d70d6f70f830d.jpg`} alt="" className="img-track"/>
                     </div>
                     {/* Comment on wave */}
-                    <div className="comments" style={{position:"relative",background: "red",width:"75%",marginLeft:15}}>
+                    <div className="comments" style={{position:"relative",background: "red",width:"65%",marginLeft:15}}>
     
                         {
                             comments && comments.map((v)=>(
@@ -161,7 +162,13 @@ const WaveTrack = (props) => {
                         
                     </div>
                 </div>
-                
+            </div>
+            <div style={{marginTop: 50}}>
+                <CommentTrack
+                    formatTime={formatTime}
+                    comments={comments}
+                    track={track}
+                />
             </div>
         
         </>

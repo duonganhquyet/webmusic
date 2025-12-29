@@ -17,6 +17,7 @@ export const fetchSongById = (id) => {
 };
 
 export const fetchCommentById = (id) => {
+<<<<<<< HEAD
     // SỬA: Trước đây bạn viết "/api//comments" (thừa 1 dấu /)
     return axios.get(`${BASE_URL}/api/comments/${id}`);
 };
@@ -43,4 +44,8 @@ export const uploadSongCover = (id, formData) => {
     return axios.post(`${BASE_URL}/api/songs/${id}/cover`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
     });
+=======
+    const urlBackend =  `/api/comments/${id}`;
+    return axios.get(urlBackend);
+>>>>>>> 872cc1932cd6893594de66e181cc5264b61c8988
 };

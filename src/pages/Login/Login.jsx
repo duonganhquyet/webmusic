@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom'
 import { useState } from 'react'
 
 const Login = () =>{
-  const [showPassword, setShowPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false);
 
   const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword)
+    setShowPassword(!showPassword);
   }
 
   return (
