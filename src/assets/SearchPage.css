@@ -1,0 +1,191 @@
+.search-page {
+  background: #111;
+  min-height: 100vh;
+  padding-bottom: 140px;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+/* HEADER */
+.search-header {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: none;
+  font-size: 16px;
+  background: #222;
+  color: white;
+}
+
+.home-btn {
+  width: 40px;
+  height: 40px;
+  font-size: 26px;
+  border: none;
+  border-radius: 8px;
+  background: #333;
+  color: white;
+  cursor: pointer;
+}
+
+/* FILTERS */
+.filters {
+  display: flex;
+  gap: 10px;
+  padding: 10px 20px;
+}
+
+.filter-btn {
+  padding: 8px 14px;
+  background: #222;
+  border-radius: 20px;
+  border: 1px solid #444;
+  font-size: 13px;
+  cursor: pointer;
+  color: #ddd;
+}
+
+.filter-btn.active {
+  background: #ff5500;
+  border-color: #ff5500;
+  color: white;
+}
+
+/* SECTION TITLE */
+.section-title {
+  margin: 20px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* TRACK CARD */
+.track-card {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  margin: 10px 20px;
+  background: #181818;
+  border-radius: 8px;
+  gap: 12px;
+}
+
+.track-cover {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.track-info {
+  flex: 1;
+}
+
+.track-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.track-meta {
+  font-size: 13px;
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+.track-play {
+  background: #ff5500;
+  border: none;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* ARTIST + GENRE CARD */
+.artist-card,
+.genre-card {
+  margin: 10px 20px;
+  padding: 12px;
+  background: #181818;
+  border-radius: 6px;
+}
+
+/* PLAYER BAR */
+.player-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #181818;
+  padding: 12px;
+  border-top: 2px solid #333;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.player-cover {
+  width: 55px;
+  height: 55px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.player-info {
+  flex: 1;
+}
+
+.player-title {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.player-artist {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.play-btn {
+  background: #ff5500;
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 22px;
+  color: white;
+  cursor: pointer;
+}
+
+.waveform {
+  flex: 2;
+  height: 50px;
+}
+
+.search-btn {
+  background: #ff5500;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.search-title {
+  margin-left: 20px;
+  margin-top: 5px;
+  color: #ccc;
+  font-size: 15px;
+}
+
+.search-title span {
+  color: white;
+  font-weight: bold;
+}

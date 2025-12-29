@@ -1,4 +1,3 @@
-
 import { createBrowserRouter } from 'react-router-dom';
 import App from '../App.jsx';
 import HomePage from '../pages/home.page.jsx';
@@ -9,30 +8,30 @@ import Library from '../pages/Library/Library.jsx';
 import Login from '../pages/Login/Login.jsx';
 import Signup from '../pages/Signup/Signup.jsx';
 
+// Đảm bảo bạn đã có 2 file này trong thư mục pages
+import SearchPage from '../pages/SearchPage'; 
+import UploadPage from '../pages/UploadPage'; 
+
 const router = createBrowserRouter([
   {
     path: "/",
     element: <App />,
     children: [
-      {
-        index: true,
-        element: <HomePage/>,
-      },
+      { index: true, element: <HomePage/> },
       { path: "/feed", element: <PageFeed/> },
       { path: "/feed1", element: <PageFeed2/> },
+      { path: "/track/:id", element: <TrackPage/> },
+      { path: "/library", element:<Library/> },
+      { path: "/login", element:<Login/> },
+      { path: "/signup", element:<Signup/> },
       {
-        path: "/track/:id",element: <TrackPage/>,
+        path: "/admin",
+        element: <AdminPage />,
       },
-      {
-        path: "/library",element:<Library/>,
-      },
-      {
-        path:"/login",element:<Login/>,
-      },
-      {
-        path:"/signup",element:<Signup/>,
-      }
       
+      // SỬA LỖI ROUTE
+      { path: "/search", element: <SearchPage/> },
+      { path: "/upload", element: <UploadPage/> }
     ],
   },
 ]);
