@@ -11,7 +11,7 @@ import Signup from '../pages/Signup/Signup.jsx';
 // Đảm bảo bạn đã có 2 file này trong thư mục pages
 import SearchPage from '../pages/SearchPage'; 
 import UploadPage from '../pages/UploadPage'; 
-
+import AdminPage from '../pages/AdminPage.jsx';  
 const router = createBrowserRouter([
   {
     path: "/",
