@@ -57,12 +57,3 @@ export const fetchHistory = async () => {
     }
 };
 
-export const fetchFavoriteSongs = async () => {
-  try {
-    const response = await axios.get('/user/favorites'); // Đường dẫn API của bạn
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching favorites:", error);
-    throw error;
-  }
-};
