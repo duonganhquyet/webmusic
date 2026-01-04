@@ -1,82 +1,134 @@
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import axios from 'axios';
 import SongItem from "../../SongItem/SongItem";
 
 export default function HistoryPanel() {
-  // Mock data - sau này thay bằng API call
-  const history = [
-    {
-      id: 1,
-      cover: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQBIQcznRvoMH0TrKCrrcok0_0hxF4xZNkEQA&s",
-      title: "Somewhere Only We Know",
-      artist: "Keane",
-      playedAt: "2 hours ago"
-    },
-    {
-      id: 2,
-      cover: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRCMCgvcat0EmKjZcRLa06Vf_vyWfppJPsIzw&s",
-      title: "Blinding Lights",
-      artist: "The Weeknd",
-      playedAt: "5 hours ago"
-    },
-    {
-      id: 3,
-      cover: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=300&h=300&fit=crop",
-      title: "Shape of You",
-      artist: "Ed Sheeran",
-      playedAt: "Yesterday"
-    },
-    {
-      id: 4,
-      cover: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=300&h=300&fit=crop",
-      title: "Levitating",
-      artist: "Dua Lipa",
-      playedAt: "Yesterday"
-    },
-    {
-      id: 5,
-      cover: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=300&h=300&fit=crop",
-      title: "Bohemian Rhapsody",
-      artist: "Queen",
-      playedAt: "2 days ago"
-    }
-  ];
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const handleClearHistory = () => {
-    if (confirm("Bạn có chắc muốn xóa toàn bộ lịch sử nghe nhạc?")) {
-      console.log("Clear history");
-      alert("Xóa lịch sử thành công!")
-      // Logic xóa lịch sử
+  // Hàm format thời gian
+  const formatTime = (isoString) => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    return date.toLocaleString('vi-VN', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        day: '2-digit', 
+        month: '2-digit' 
+    });
+  };
+
+  useEffect(() => {
+    // 1. Kiểm tra Token
+    const token = localStorage.getItem('token'); 
+    
+    if (!token) {
+      setIsLoggedIn(false);
+      setLoading(false);
+      return;
+    }
+
+    setIsLoggedIn(true);
+
+    // 2. Gọi API
+    const fetchHistory = async () => {
+      try {
+        // Backend cần populate field 'track' để lấy chi tiết bài hát
+        const response = await axios.get('http://localhost:5000/api/history', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (response.data && Array.isArray(response.data)) {
+          setHistory(response.data);
+        }
+      } catch (error) {
+        console.error("Lỗi tải lịch sử:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, []);
+
+  const handleClearHistory = async () => {
+    if (confirm("Bạn có chắc muốn xóa toàn bộ lịch sử?")) {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.delete('http://localhost:5000/api/history', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        setHistory([]);
+        alert("Đã xóa lịch sử!");
+      } catch (error) {
+        alert("Lỗi khi xóa lịch sử.");
+      }
     }
   };
+
+  // --- RENDER ---
+
+  if (!isLoggedIn) {
+    return (
+      <div className="history-panel">
+        <div className="panel-header"><h3>History</h3></div>
+        <div className="empty-state" style={{ textAlign: 'center', padding: '30px 0' }}>
+          <p>Vui lòng đăng nhập để xem lịch sử.</p>
+          <Link to="/login" style={{ fontWeight: 'bold', color: '#fff', textDecoration: 'underline' }}>
+            Đăng nhập ngay
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="history-panel">
       <div className="panel-header">
         <div>
           <h3>History</h3>
-          <p>Lịch sử nghe nhạc gần đây. ({history.length} bài hát)</p>
+          <p>Đã nghe gần đây ({history.length} bài)</p>
         </div>
-        <button className="clear-history-btn" onClick={handleClearHistory}>
-          Clear History
-        </button>
+        {history.length > 0 && (
+          <button className="clear-history-btn" onClick={handleClearHistory}>
+            Clear All
+          </button>
+        )}
       </div>
 
       <div className="song-list">
-        {history.map(song => (
-          <div key={song.id} className="history-item">
-            <SongItem
-              cover={song.cover}
-              title={song.title}
-              artist={song.artist}
-              onPlay={() => console.log(`Playing: ${song.title}`)}
-            />
-            <span className="played-time">{song.playedAt}</span>
-          </div>
-        ))}
+        {loading ? (
+          <p style={{ padding: '20px', textAlign: 'center', color: '#888' }}>Đang tải...</p>
+        ) : (
+          history.map((item) => {
+             // Lấy object bài hát từ trường 'track' (theo screenshot DB History)
+             // Nếu backend của bạn trả về field tên là 'song', hãy sửa 'item.track' thành 'item.song'
+             const song = item.track || {}; 
+
+             return (
+              <div key={item._id} className="history-item">
+                <SongItem
+                  // Map đúng trường từ DB Songs (image_ca0d97.png)
+                  cover={song.imgUrl || "https://via.placeholder.com/150"} 
+                  title={song.title || "Không rõ tên"}
+                  // Dùng description làm tên ca sĩ (theo dữ liệu mẫu "Dương Domic")
+                  artist={song.description || "Unknown Artist"} 
+                  onPlay={() => console.log(`Playing: ${song._id}`)}
+                />
+                
+                {/* Hiển thị thời gian listenedAt từ DB History */}
+                <span className="played-time">{formatTime(item.listenedAt)}</span>
+              </div>
+            );
+          })
+        )}
       </div>
 
-      {history.length === 0 && (
+      {!loading && history.length === 0 && (
         <div className="empty-state">
-          <p>Lịch sử nghe nhạc trống. Bắt đầu nghe nhạc để xem lịch sử tại đây!</p>
+          <p>Chưa có lịch sử nghe nhạc.</p>
         </div>
       )}
     </div>

@@ -12,6 +12,7 @@
   import UserProfile from '../pages/Profile/UserProfile.jsx';
   // import AdminPage from '../pages/Admin/AdminPage.jsx';
 
+<<<<<<< HEAD
   const router = createBrowserRouter([
     {
       path: "/",
@@ -33,3 +34,33 @@
   ]);
 
   export default router;
+=======
+// Đảm bảo bạn đã có 2 file này trong thư mục pages
+import SearchPage from '../pages/SearchPage'; 
+import UploadPage from '../pages/UploadPage'; 
+import AdminPage from '../pages/AdminPage.jsx';  
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <App />,
+    children: [
+      { index: true, element: <HomePage/> },
+      { path: "/feed", element: <PageFeed/> },
+      { path: "/feed1", element: <PageFeed2/> },
+      { path: "/track/:id", element: <TrackPage/> },
+      { path: "/library", element:<Library/> },
+      { path: "/login", element:<Login/> },
+      { path: "/signup", element:<Signup/> },
+      {
+        path: "/admin",
+        element: <AdminPage />,
+      },
+      
+      // SỬA LỖI ROUTE
+      { path: "/search", element: <SearchPage/> },
+      { path: "/upload", element: <UploadPage/> }
+    ],
+  },
+]);
+export default router;
+>>>>>>> 37ade6cf7e840b72a3fd73b2e2382e9b38dc877a
