@@ -78,10 +78,10 @@ const Header = () => {
                             {/* Dùng Link để chuyển trang bình thường */}
                             <Link to="/upload" className="upload-link">Upload</Link>
                             
-                            <div className="user-avatar">
+                            <Link to={`/user/${auth.user._id}`} className="user-avatar">
                                 {/* <span></span> */}
                                 <img src={`../../../public/${auth.user.imgUrl}`} style={{objectFit: "cover", width:"100%"}} alt="Ảnh avatar" />
-                            </div>
+                            </Link>
 
                             <button className="btn btn-logout" onClick={handleLogout}>
                                 Sign Out

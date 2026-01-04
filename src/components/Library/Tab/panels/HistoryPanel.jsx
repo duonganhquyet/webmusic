@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import SongItem from "../../SongItem/SongItem";
+import { Link } from "react-router-dom";
 import { clearUserHistory, dislikeSongAPI, fetchUserHistory, likeSongAPI } from "../../../../services/api";
 import { useNavigate } from "react-router-dom";
+import { useAuthContext } from "../../../../contexts/auth.context";
 
 export default function HistoryPanel(props) {
   const {setChanged, changed}= props;
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const {auth} = useAuthContext();
+  const isLoggedIn = !!(auth && auth.user && auth.user._id);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -71,6 +75,22 @@ export default function HistoryPanel(props) {
       setError(err.message);
     }
   };
+
+  // --- RENDER ---
+
+  if (!isLoggedIn) {
+    return (
+      <div className="history-panel">
+        <div className="panel-header"><h3>History</h3></div>
+        <div className="empty-state" style={{ textAlign: 'center', padding: '30px 0' }}>
+          <p>Vui lòng đăng nhập để xem lịch sử.</p>
+          <Link to="/login" style={{ fontWeight: 'bold', color: '#fff', textDecoration: 'underline' }}>
+            Đăng nhập ngay
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="history-panel">

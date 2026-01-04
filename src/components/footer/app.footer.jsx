@@ -45,7 +45,7 @@ const AppFooter = () => {
                                 minWidth: "100px"
                             }}>
                                 <div style={{ color: "#ccc"}}>{currentTrack.uploader.name}</div>
-                                <div className="track-title">{currentTrack.title}</div>
+                                <div className="track-title-footer">{currentTrack.title}</div>
                     </div>
                 </Container>
             </div>}  

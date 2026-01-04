@@ -1,20 +1,19 @@
 import axios from "./axios.customize";
 
 export const fetchHomeData = () => {
-    const urlBackend = "/api/songs/home";
-    return axios.get(urlBackend);  
+    // SỬA: Thêm BASE_URL
+    return axios.get(`/api/songs/home`);  
 };
 
 export const fetchSongById = (id) => {
-    const urlBackend =  `/api/song/${id}`;
+    const urlBackend = `/api/song/${id}`;
     return axios.get(urlBackend);
-};
+}
 
 export const fetchCommentById = (id) => {
-    const urlBackend =  `/api/comments/${id}`;
+    const urlBackend = `/api/comments/${id}`;
     return axios.get(urlBackend);
 };
-
 export const checkUsername = (username) => {
     const urlBackend =  `/api/check-username`;
     return axios.get(urlBackend,{
@@ -101,3 +100,45 @@ export const clearUserHistory = () => {
     const urlBackend = `/api/history/clear`;
     return axios.delete(urlBackend);
 }
+
+/* =========================================
+   2. CÁC HÀM MỚI (UPLOAD & SEARCH)
+   ========================================= */
+
+export const searchSongs = (query) => {
+    return axios.get(`/api/search?q=${encodeURIComponent(query)}`);
+};
+
+export const uploadSongFile = (formData) => {
+    return axios.post(`/api/upload`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+};
+
+export const updateSongInfo = (id, data) => {
+    return axios.put(`/api/songs/${id}`, data);
+};
+
+export const uploadSongCover = (id, formData) => {
+    return axios.post(`/api/songs/${id}/cover`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+  
+};
+
+export const fetchHistory = async () => {
+    try {
+        // Giả sử bạn đã cấu hình axios để tự động gửi Header Authorization
+        const response = await axios.get('/api/history/get-history'); 
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching history:", error);
+        return [];
+    }
+};
+export const fetchSongsByUser = async (userId) => {
+  const res = await axios.get(`/api/users/${userId}/songs`);
+  // res lúc này === { songs: [...] }
+  return res.songs || [];
+};
+

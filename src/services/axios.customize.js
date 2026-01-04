@@ -6,7 +6,6 @@ const instance = axios.create({
 });
 
 
-// Add a request interceptor
 instance.interceptors.request.use(function (config) {
     // Do something before request is sent
     const token = localStorage.getItem("accessToken");
@@ -30,6 +29,12 @@ instance.interceptors.response.use(function (response) {
     if(error && error.response && error.response.data){
       return error.response.data;
     }
+
+    return config;
+  },
+  function (error) {
     return Promise.reject(error);
-  });
+  }
+);
+
 export default instance;

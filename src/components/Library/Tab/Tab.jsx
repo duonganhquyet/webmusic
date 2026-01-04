@@ -3,15 +3,15 @@ import "./Tab.css";
 
 // Import các panels
 import GeneralPanel from "./panels/GeneralPanel";
-import LikePanel from "./panels/LikePanel";
 import PlaylistPanel from "./panels/PlaylistPanel";
 import FollowingPanel from "./panels/FollowingPanel";
 import HistoryPanel from "./panels/HistoryPanel";
+import LikePanel from "./panels/LikePanel";
 import { useAuthContext } from "../../../contexts/auth.context";
 
 const TAB_LIST = [
   { id: "general", label: "General" },
-  { id: "like", label: "Like" },
+  { id: "like", label: "Liked Songs" },
   { id: "playlist", label: "Playlist" },
   { id: "following", label: "Following" },
   { id: "history", label: "History" },
@@ -75,7 +75,6 @@ export default function Tabs({ initial = "general" }) {
         <TabPanel id="general" active={active === "general"}>
           <GeneralPanel changed={changed}/>
         </TabPanel>
-
         <TabPanel id="like" active={active === "like"}>
           <LikePanel setChanged={setChanged} changed={changed}/>
         </TabPanel>

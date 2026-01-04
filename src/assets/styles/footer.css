@@ -1,7 +1,7 @@
 .rhap_main {gap: 30px}
 
 /* Single-line ellipsis for current track title */
-.track-title {
+.track-title-footer {
     width: 150px;
 	color: black;
 	white-space: nowrap;
