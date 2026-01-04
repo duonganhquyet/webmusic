@@ -56,4 +56,12 @@ export const fetchHistory = async () => {
         return [];
     }
 };
+<<<<<<< HEAD
+export const fetchSongsByUser = async (userId) => {
+  const res = await axios.get(`/api/users/${userId}/songs`);
+  // res lúc này === { songs: [...] }
+  return res.songs || [];
+};
+=======
 
+>>>>>>> 37ade6cf7e840b72a3fd73b2e2382e9b38dc877a
