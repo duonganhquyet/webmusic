@@ -1,22 +1,25 @@
-import { Outlet, useLocation } from "react-router-dom"; // 1. Thêm useLocation
+import { Outlet, useLocation } from "react-router-dom"; 
 import Header from "./components/layout/header";
 import AppFooter from "./components/footer/app.footer";
+import NotificationInit from './components/NotificationInit'; // Import component đã tạo
 import "./assets/styles/global.css";
 
 const App = () => {
-  const location = useLocation(); // 2. Lấy thông tin URL hiện tại
-
-  // 3. Kiểm tra xem đường dẫn có bắt đầu bằng "/admin" không
+  const location = useLocation(); 
+  
+  // Kiểm tra xem đường dẫn có bắt đầu bằng "/admin" không
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   return (
     <>
-      {/* 4. Chỉ hiện Header nếu KHÔNG PHẢI là trang Admin */}
+      {/* 1. Đặt NotificationInit ở đây để nó luôn hoạt động (cả Admin lẫn User) */}
+      <NotificationInit />
+
+      {/* 2. Các thành phần giao diện khác */}
       {!isAdminRoute && <Header />}
 
       <Outlet />
 
-      {/* 5. Chỉ hiện Footer nếu KHÔNG PHẢI là trang Admin */}
       {!isAdminRoute && <AppFooter/>}
     </>
   )

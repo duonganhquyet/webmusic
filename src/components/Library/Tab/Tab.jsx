@@ -3,7 +3,6 @@ import "./Tab.css";
 
 // Import các panels
 import GeneralPanel from "./panels/GeneralPanel";
-import LikePanel from "./panels/LikePanel";
 import PlaylistPanel from "./panels/PlaylistPanel";
 import AlbumPanel from "./panels/AlbumPanel";
 import FollowingPanel from "./panels/FollowingPanel";
@@ -11,7 +10,6 @@ import HistoryPanel from "./panels/HistoryPanel";
 
 const TAB_LIST = [
   { id: "general", label: "General" },
-  { id: "like", label: "Like" },
   { id: "playlist", label: "Playlist" },
   { id: "album", label: "Album" },
   { id: "following", label: "Following" },
@@ -72,10 +70,6 @@ export default function Tabs({ initial = "general" }) {
       <div className="tab-panels">
         <TabPanel id="general" active={active === "general"}>
           <GeneralPanel />
-        </TabPanel>
-
-        <TabPanel id="like" active={active === "like"}>
-          <LikePanel />
         </TabPanel>
 
         <TabPanel id="playlist" active={active === "playlist"}>

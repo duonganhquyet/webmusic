@@ -1,10 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { notifyWarning, notifyError, notifySuccess } from '../utils/notification';
 import "../assets/UploadPage.css";
 
+// Cổng Backend (8080)
 const API_BASE = "http://localhost:8080";
 const MAX_RECORD_SECONDS = 600; // 10 phút
 
+// Hàm format thời gian (MM:SS)
 function formatTime(seconds) {
   const s = Math.floor(seconds);
   const m = Math.floor(s / 60);
@@ -12,12 +15,23 @@ function formatTime(seconds) {
   return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
 }
 
+// Hàm chuẩn hóa đường dẫn ảnh/nhạc từ Backend
+const getFullUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http")) return path; // Nếu là link online (zing mp3, nhaccuatui...)
+  
+  // Đảm bảo đường dẫn bắt đầu bằng dấu "/" để ghép với API_BASE
+  // Ví dụ: path là "images/abc.jpg" -> "/images/abc.jpg"
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${API_BASE}${normalizedPath}`;
+};
+
 export default function UploadPage() {
   const [isDragging, setDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [message, setMessage] = useState("");
 
-  // GHI ÂM
+  // STATE GHI ÂM
   const [isRecordPanelOpen, setRecordPanelOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -29,17 +43,21 @@ export default function UploadPage() {
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
 
-  // TRACK INFO
+  // TRACK INFO (Sau khi upload xong)
   const [recentSong, setRecentSong] = useState(null);
   const [showTrackInfo, setShowTrackInfo] = useState(false);
 
   const navigate = useNavigate();
 
-  // ========== UPLOAD AUDIO ==========
+  // ========== 1. UPLOAD AUDIO (Lưu vào folder filemp3) ==========
   const uploadFiles = async (files) => {
     try {
-      setMessage("Đang tải lên...");
+      if (files.length === 0) return;
+      
+      setMessage("Đang tải lên server...");
       const formData = new FormData();
+      // Backend đang dùng upload.single('files') hoặc array('files')
+      // Đảm bảo key này khớp với backend (thường là "file" hoặc "files")
       files.forEach((file) => formData.append("files", file));
 
       const res = await fetch(`${API_BASE}/api/upload`, {
@@ -50,10 +68,13 @@ export default function UploadPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Upload failed");
 
-      setMessage("Tải lên thành công!");
+      setMessage("Tải lên thành công! File đã lưu vào thư mục filemp3.");
 
-      if (data.songs && data.songs.length > 0) {
-        setRecentSong(data.songs[0]);
+      // Backend trả về mảng songs hoặc 1 song
+      const uploadedSongs = data.songs || (Array.isArray(data) ? data : [data]);
+      
+      if (uploadedSongs.length > 0) {
+        setRecentSong(uploadedSongs[0]); // Lấy bài vừa up để sửa info
         setShowTrackInfo(true);
       }
     } catch (err) {
@@ -76,7 +97,7 @@ export default function UploadPage() {
     uploadFiles(files);
   };
 
-  // ========== GHI ÂM (Giữ nguyên logic cũ) ==========
+  // ========== 2. LOGIC GHI ÂM (Record) ==========
   const toggleRecordPanel = () => setRecordPanelOpen((prev) => !prev);
 
   const clearPreviousRecording = () => {
@@ -92,12 +113,12 @@ export default function UploadPage() {
 
     timerRef.current = setInterval(() => {
       setRecordTime((prev) => {
-        const next = prev + 0.2;
+        const next = prev + 0.2; // Cập nhật mỗi 200ms
         if (next >= MAX_RECORD_SECONDS) {
           if (mediaRecorderRef.current) mediaRecorderRef.current.stop();
           setIsRecording(false);
           setIsPaused(false);
-          setMessage("Đã đạt giới hạn 10 phút, ghi âm đã dừng.");
+          setMessage("Đã đạt giới hạn 10 phút, tự động dừng.");
           stopTimer();
           return MAX_RECORD_SECONDS;
         }
@@ -116,7 +137,7 @@ export default function UploadPage() {
   const handleStartRecording = async () => {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Trình duyệt của bạn không hỗ trợ ghi âm.");
+        alert("Trình duyệt không hỗ trợ micro.");
         return;
       }
 
@@ -159,39 +180,33 @@ export default function UploadPage() {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       setIsPaused(false);
-      setMessage("Đã dừng ghi âm. Bạn có thể nghe thử và upload.");
+      setMessage("Đã dừng ghi âm.");
       stopTimer();
     }
   };
 
   const handlePauseResume = () => {
     if (!mediaRecorderRef.current || !isRecording) return;
-
     if (!isPaused) {
       mediaRecorderRef.current.pause();
       setIsPaused(true);
-      setMessage("Đang tạm dừng ghi âm...");
+      setMessage("Tạm dừng...");
       stopTimer();
     } else {
       mediaRecorderRef.current.resume();
       setIsPaused(false);
-      setMessage("Tiếp tục ghi âm...");
+      setMessage("Đang ghi âm...");
       startTimer(false);
     }
   };
 
   const handleUploadRecording = async () => {
     if (!recordedBlob) {
-      alert("Chưa có bản ghi để upload.");
+      alert("Chưa có file ghi âm.");
       return;
     }
-
-    const file = new File(
-      [recordedBlob],
-      `recording-${Date.now()}.webm`,
-      { type: "audio/webm" }
-    );
-
+    // Tạo file từ Blob, đặt tên đuôi .webm
+    const file = new File([recordedBlob], `recording-${Date.now()}.webm`, { type: "audio/webm" });
     setSelectedFiles([file]);
     await uploadFiles([file]);
   };
@@ -199,27 +214,22 @@ export default function UploadPage() {
   const handleDeleteRecording = () => {
     clearPreviousRecording();
     setSelectedFiles([]);
-    setMessage("Đã xoá bản ghi.");
+    setMessage("Đã hủy bản ghi.");
   };
 
   const handleClose = () => navigate("/");
 
-  const progressPercent = Math.min(
-    (recordTime / MAX_RECORD_SECONDS) * 100,
-    100
-  );
+  const progressPercent = Math.min((recordTime / MAX_RECORD_SECONDS) * 100, 100);
 
   return (
     <div className="upload-page">
       <header className="upload-header">
-        <div className="upload-logo">Upload</div>
-        <button className="close-btn" onClick={handleClose}>
-          ×
-        </button>
+        <div className="upload-logo">Upload Music</div>
+        <button className="close-btn" onClick={handleClose}>×</button>
       </header>
 
       <main className="upload-main">
-        {/* DROPZONE */}
+        {/* Kéo thả file */}
         <div
           className={`dropzone ${isDragging ? "dragging" : ""}`}
           onDragOver={(e) => {
@@ -230,115 +240,82 @@ export default function UploadPage() {
           onDrop={handleDrop}
         >
           <div className="dropzone-inner">
-            <div className="cloud-icon">☁️⬆️</div>
-            <p className="drop-text">
-              Drag and drop audio files to get started.
-            </p>
+            <div className="cloud-icon">☁️</div>
+            <p className="drop-text">Kéo thả file nhạc (MP3, WAV...) vào đây</p>
             <label className="choose-files-btn">
-              Choose files
-              <input
-                type="file"
-                multiple
-                hidden
-                accept="audio/*"
-                onChange={handleFileChange}
-              />
+              Chọn File
+              <input type="file" multiple hidden accept="audio/*" onChange={handleFileChange} />
             </label>
           </div>
         </div>
 
-        {/* RECORD BAR */}
+        {/* Thanh Record */}
         <div className="bottom-bar" onClick={toggleRecordPanel}>
           <div className="mic-section">
             <span className="mic-icon">🎙️</span>
-            <span className="mic-text">Or record with a microphone</span>
-          </div>
-          <div className="mic-description">
-            Upload recorded voice memos, updates, news, or intros to new releases.
+            <span className="mic-text">Hoặc ghi âm trực tiếp</span>
           </div>
           <div className="arrow-icon">{isRecordPanelOpen ? "▲" : "▼"}</div>
         </div>
 
-        {/* PANEL GHI ÂM */}
+        {/* Panel Điều khiển Record */}
         {isRecordPanelOpen && (
           <div className="record-panel">
             <div className="record-controls">
               {!isRecording ? (
-                <button className="btn start-btn" onClick={handleStartRecording}>
-                  Bắt đầu ghi âm
-                </button>
+                <button className="btn start-btn" onClick={handleStartRecording}>Bắt đầu</button>
               ) : (
                 <>
-                  <button className="btn stop-btn" onClick={handleStopRecording}>
-                    Dừng ghi âm
-                  </button>
-                  <button className="btn pause-btn" onClick={handlePauseResume}>
-                    {isPaused ? "Tiếp tục" : "Tạm dừng"}
-                  </button>
+                  <button className="btn stop-btn" onClick={handleStopRecording}>Dừng</button>
+                  <button className="btn pause-btn" onClick={handlePauseResume}>{isPaused ? "Tiếp tục" : "Tạm dừng"}</button>
                 </>
               )}
 
               {recordedAudioURL && !isRecording && (
                 <>
-                  <button
-                    className="btn upload-btn"
-                    onClick={handleUploadRecording}
-                  >
-                    Upload bản ghi
-                  </button>
-                  <button
-                    className="btn delete-btn"
-                    onClick={handleDeleteRecording}
-                  >
-                    Xoá bản ghi
-                  </button>
+                  <button className="btn upload-btn" onClick={handleUploadRecording}>Tải lên</button>
+                  <button className="btn delete-btn" onClick={handleDeleteRecording}>Xóa</button>
                 </>
               )}
             </div>
 
             {isRecording && (
               <div className="record-timer">
-                <div className="record-time-text">
-                  Thời gian: {formatTime(recordTime)}
-                </div>
+                <div className="record-time-text">{formatTime(recordTime)}</div>
                 <div className="record-time-bar">
-                  <div
-                    className="record-time-bar-fill"
-                    style={{ width: `${progressPercent}%` }}
-                  />
+                  <div className="record-time-bar-fill" style={{ width: `${progressPercent}%` }} />
                 </div>
               </div>
             )}
 
             {recordedAudioURL && (
               <div className="record-preview">
-                <p>Nghe thử bản ghi:</p>
-                <audio controls src={recordedAudioURL}></audio>
+                <audio controls src={recordedAudioURL} />
               </div>
             )}
           </div>
         )}
 
-        {/* STATUS */}
+        {/* Hiển thị trạng thái */}
         <div className="status-area">
-          {message && <p>{message}</p>}
+          {message && <p className="message-text">{message}</p>}
           {selectedFiles.length > 0 && (
-            <ul className="file-list">
-              {selectedFiles.map((file, idx) => (
-                <li key={idx}>{file.name}</li>
-              ))}
-            </ul>
+            <div className="file-list">
+              {selectedFiles.map((f, i) => <div key={i}>📄 {f.name}</div>)}
+            </div>
           )}
         </div>
 
-        {/* TRACK INFO FORM - ĐÃ SỬA LẠI */}
+        {/* Form sửa thông tin bài hát (Hiển thị sau khi upload xong) */}
         {showTrackInfo && recentSong && (
           <TrackInfoForm
             song={recentSong}
             onUpdated={(newSong) => {
               setRecentSong(newSong);
               setShowTrackInfo(false);
-              setMessage("Đã cập nhật thông tin bài hát.");
+              setMessage("Cập nhật thông tin thành công!");
+              // Có thể navigate về trang nghe nhạc nếu muốn
+              // navigate(`/track/${newSong._id}`);
             }}
           />
         )}
@@ -347,63 +324,52 @@ export default function UploadPage() {
   );
 }
 
-// ========= FORM TRACK INFO (ĐÃ CHỈNH SỬA THEO DB MỚI) =========
+// ========= COMPONENT SỬA THÔNG TIN & UPLOAD ẢNH (Lưu vào folder images) =========
 function TrackInfoForm({ song, onUpdated }) {
-  // 1. Map state đúng với database (title, description, category, imgUrl)
+  // State form
   const [title, setTitle] = useState(song.title || "");
-  const [description, setDescription] = useState(song.description || ""); // Artist Name
+  const [description, setDescription] = useState(song.description || ""); // Artist
   const [category, setCategory] = useState(song.category || ""); // Genre
   
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // 2. Cover Image (imgUrl)
-  const [imgUrl, setImgUrl] = useState(
-    song.imgUrl ? `${API_BASE}${song.imgUrl.startsWith("/") ? "" : "/"}${song.imgUrl}` : null
-  );
+  // Xử lý hiển thị ảnh cover
+  const [imgUrl, setImgUrl] = useState(getFullUrl(song.imgUrl));
   const [uploadingCover, setUploadingCover] = useState(false);
   const coverInputRef = useRef(null);
 
+  // Cập nhật thông tin văn bản
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setSaving(true);
       setError("");
 
-      // Gửi PUT với các trường chuẩn
       const res = await fetch(`${API_BASE}/api/songs/${song._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: title,
-          description: description, // Dùng làm Artist
-          category: category,       // Dùng làm Genre
-        }),
+        body: JSON.stringify({ title, description, category }),
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Update failed");
+      if (!res.ok) throw new Error(data.message || "Lỗi cập nhật");
 
       onUpdated && onUpdated(data.song);
     } catch (err) {
-      console.error(err);
       setError(err.message);
     } finally {
       setSaving(false);
     }
   };
 
-  // COVER UPLOAD
-  const handleArtworkClick = () => {
-    if (coverInputRef.current) coverInputRef.current.click();
-  };
-
+  // Upload ảnh Cover (Vào folder images)
   const handleCoverChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const formData = new FormData();
-    formData.append("cover", file);
+    formData.append("cover", file); // Key 'cover' phải khớp với backend multer
 
     try {
       setUploadingCover(true);
@@ -415,32 +381,34 @@ function TrackInfoForm({ song, onUpdated }) {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Cover upload failed");
+      if (!res.ok) throw new Error(data.message || "Lỗi upload ảnh");
 
-      // Cập nhật lại imgUrl từ server trả về
-      const newImgPath = data.song.imgUrl;
-      const fullUrl = `${API_BASE}${newImgPath.startsWith("/") ? "" : "/"}${newImgPath}`;
-      setImgUrl(fullUrl);
+      // Cập nhật UI ngay lập tức với đường dẫn mới từ Backend (trong folder images)
+      setImgUrl(getFullUrl(data.song.imgUrl));
     } catch (err) {
-      console.error(err);
       setError(err.message);
     } finally {
       setUploadingCover(false);
-      e.target.value = "";
+      e.target.value = ""; // Reset input
     }
   };
 
   return (
     <div className="trackinfo-wrapper">
-      <h2 className="trackinfo-title">Track info</h2>
+      <h2 className="trackinfo-title">Chỉnh sửa thông tin bài hát</h2>
       <div className="trackinfo-container">
-        {/* Artwork (imgUrl) */}
-        <div className="artwork-box" onClick={handleArtworkClick}>
+        
+        {/* Phần Ảnh Bìa (Cover) */}
+        <div className="artwork-box" onClick={() => coverInputRef.current.click()}>
           {imgUrl ? (
             <img src={imgUrl} alt="Cover" className="artwork-img" />
           ) : (
-            <div className="artwork-placeholder">Add new artwork</div>
+            <div className="artwork-placeholder">
+               <span>📷</span>
+               <p>Tải ảnh bìa</p>
+            </div>
           )}
+          
           <input
             type="file"
             accept="image/*"
@@ -448,52 +416,47 @@ function TrackInfoForm({ song, onUpdated }) {
             ref={coverInputRef}
             onChange={handleCoverChange}
           />
-          {uploadingCover && (
-            <div className="artwork-uploading">Đang tải ảnh...</div>
-          )}
+          
+          {uploadingCover && <div className="artwork-overlay">Đang tải...</div>}
         </div>
 
-        {/* Form Nhập Liệu Đơn Giản */}
+        {/* Form Nhập Liệu */}
         <form className="trackinfo-form" onSubmit={handleSubmit}>
-          
-          {/* TITLE */}
           <div className="form-group">
-            <label>Track title *</label>
+            <label>Tên bài hát *</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              placeholder="Nhập tên bài hát"
+              placeholder="Ví dụ: Lạc Trôi"
             />
           </div>
 
-          {/* DESCRIPTION (ARTIST) */}
           <div className="form-group">
-            <label>Nghệ sĩ (Description)</label>
+            <label>Ca sĩ / Nghệ sĩ (Description)</label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Nhập tên nghệ sĩ (Dương Domic)"
+              placeholder="Ví dụ: Sơn Tùng M-TP"
             />
           </div>
 
-          {/* CATEGORY (GENRE) */}
           <div className="form-group">
             <label>Thể loại (Category)</label>
             <input
               type="text"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              placeholder="Nhập thể loại (RAP, POP...)"
+              placeholder="Ví dụ: POP, BALLAD..."
             />
           </div>
 
-          {error && <p className="error-text">{error}</p>}
+          {error && <p className="error-text">⚠️ {error}</p>}
 
           <button type="submit" className="btn save-btn" disabled={saving}>
-            {saving ? "Đang lưu..." : "Lưu thông tin"}
+            {saving ? "Đang lưu..." : "Lưu & Hoàn tất"}
           </button>
         </form>
       </div>
