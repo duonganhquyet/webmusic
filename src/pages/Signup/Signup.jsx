@@ -1,10 +1,24 @@
 import './Signup.css'
-import { Link } from 'react-router-dom'
+import { Link, redirect } from 'react-router-dom'
 import { useState } from 'react'
+import { useNavigate } from "react-router-dom"
+import { checkUsername, registerUser } from '../../services/api'
 
-const Signup = () => {
+function Signup() {
+  const navigate = useNavigate()
+
+
+  const [username, setUsername] = useState("")
+  const [fullName, setFullName] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [error, setError] = useState("")
+
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  const [isUsernameAvailable, setIsUsernameAvailable] = useState(false)
+
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword)
@@ -14,23 +28,91 @@ const Signup = () => {
     setShowConfirmPassword(!showConfirmPassword)
   }
 
+  const checkUsernameAvailability = async () => {
+    if (!username) return null
+    try {
+      
+      const res = await checkUsername(username);
+      if(res && res.data){
+        console.log("check res",res );
+        
+        setIsUsernameAvailable(!!res.data.exists);
+        return !!res.data.exists;
+      }
+      
+      
+    } catch (err) {
+
+      // don't block registration on check failure, but notify user
+      setError("Could not verify username")
+      return null
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError("")
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+
+    // Check username availability before calling register
+    const exists = await checkUsernameAvailability()
+    if (exists === true) {
+      setError("Username already exists")
+      return
+    }
+
+    try {
+      const res = await registerUser(username, password, fullName);
+      if(res && res.data){
+        console.log("check res register",res );
+      }
+
+      // if (!res.ok) {
+      //   throw new Error(data.message || "Register failed")
+      // }
+
+      alert("Đăng ký thành công!");
+      navigate("/login")
+
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   return (
     <div className="signup-container">
       <div className="back-home">
         <Link to="/">&larr; Back to Home</Link>
       </div>
 
-      <form className="signup-form">
+      <form className="signup-form" onSubmit={handleSubmit}>
         <h1>Sign Up</h1>
         
+         {error && <p className="error-text" style={{color: "red", textAlign: 'center'}}>{error}</p>}
+
         <div className="form-group">
           <label htmlFor="username">Username</label>
-          <input type="text" id="username" placeholder="Enter your username" required />
+          <input
+            type="text"
+            id="username"
+            placeholder="Enter your username"
+            required
+            value={username}
+            onChange={(e) => { setUsername(e.target.value)}}
+            onBlur={checkUsernameAvailability}
+          />
+          {isUsernameAvailable && (
+            <div className="small-text error-text" style={{color: "red"}}>Username already taken</div>
+          ) }
         </div>
 
         <div className="form-group">
-          <label htmlFor="email">Email</label>
-          <input type="email" id="email" placeholder="Enter your email" required />
+          <label htmlFor="name">Full Name</label>
+          <input id="name" placeholder="Enter your name" required onChange={(e) => setFullName(e.target.value)} />
         </div>
 
         <div className="form-group">
@@ -41,6 +123,7 @@ const Signup = () => {
               id="password" 
               placeholder="Enter your password" 
               required 
+              onChange={(e) => setPassword(e.target.value)}
             />
             <button 
               type="button" 
@@ -71,6 +154,7 @@ const Signup = () => {
               id="confirm-password" 
               placeholder="Confirm your password" 
               required 
+               onChange={(e) => setConfirmPassword(e.target.value)}
             />
             <button 
               type="button" 

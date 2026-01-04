@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./SongItem.css";
 
 export default function SongItem({
@@ -11,6 +11,11 @@ export default function SongItem({
   onMore,
 }) {
   const [isLiked, setIsLiked] = useState(liked);
+
+  // Keep internal state in sync with parent-provided liked prop
+  useEffect(() => {
+    setIsLiked(liked);
+  }, [liked]);
 
   function toggleLike(e) {
     e.stopPropagation();

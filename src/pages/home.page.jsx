@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Pagination } from 'antd'; // Yêu cầu: npm install antd
 import Card from '../components/Card';
-import Sidebar from '../components/Sidebar';
+import HistoryTrack from '../components/historyTrack';
 import { fetchHomeData } from '../services/api';
 import { Link, NavLink } from 'react-router-dom';
+import { useAuthContext } from '../contexts/auth.context';
 
 const Home = () => {
   // 1. Khởi tạo state với cấu trúc mặc định tránh lỗi undefined khi chưa tải xong
   const [data, setData] = useState({ topSongs: [], allSongs: [] });
+  const {auth} = useAuthContext();
+  const isLoggedIn = !!(auth && auth.user && auth.user._id);
   
   // 2. State quản lý phân trang
   const [currentPage, setCurrentPage] = useState(1);
@@ -141,9 +144,15 @@ const Home = () => {
 
 
         {/* === CỘT PHẢI (SIDEBAR - LỊCH SỬ NGHE) === */}
-        <div style={{ flex: 1, minWidth: '280px', marginTop: '60px' }}>
-           <Sidebar />
-        </div>
+        {isLoggedIn ? (
+          <div style={{ flex: 1, minWidth: '280px', marginTop: '60px' }}>
+           <HistoryTrack />
+          </div>
+        ):
+        (
+          <div style={{width: 280, color: "red"}}>Thêm giao diện gì đó vào phần lịch sử khi chưa đăng nhập này đi Quyết ơiiiiiii</div>
+        )}
+        
         {/* === HẾT CỘT PHẢI === */}
 
       </div>

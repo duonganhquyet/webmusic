@@ -10,6 +10,13 @@ const  TrackPage =  ()  =>  {
     console.log("check track id:",id);
     const [track,setTrack] = useState(null);
     const [comments,setComments] = useState(null);
+    
+    const fetchCommentData = async () => {
+            const response = await fetchCommentById(id);
+            if(response && response.data){
+                setComments(response.data);
+            }
+        }
     useEffect(() => {
         const fetchDataDetail = async () => {
             const response = await fetchSongById(id);
@@ -20,22 +27,21 @@ const  TrackPage =  ()  =>  {
         }
         fetchDataDetail();
 
-        const fetCommentData = async () => {
-            const response = await fetchCommentById(id);
-            if(response && response.data){
-                setComments(response.data);
-            }
-        }
-        fetCommentData();
+        
+        fetchCommentData();
     },[])
     
 
     return (
-        <Container>
-            <WaveTrack track={track}
-                comments={comments}
-            />
-        </Container>
+        <>
+            <div style={{marginTop: 55}}></div>
+            <Container>
+                <WaveTrack track={track}
+                    comments={comments}
+                    fetchCommentData={fetchCommentData}
+                />
+            </Container>
+        </>
     )
 }
 export default TrackPage;

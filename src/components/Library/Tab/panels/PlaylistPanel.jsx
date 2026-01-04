@@ -1,73 +1,105 @@
+import { useEffect, useState } from "react";
+import PlaylistCreateModal from "./PlaylistCreateModal.jsx";
+import PlaylistTracksModal from "./PlaylistTracksModal.jsx";
+import { createUserPlaylist, fetchUserPlaylists } from "../../../../services/api.js";
+
 export default function PlaylistPanel() {
-  // Mock data - sau này thay bằng API call
-  const playlists = [
-    {
-      id: 1,
-      name: "Chill Vibes",
-      cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=300&h=300&fit=crop",
-      songCount: 45,
-      isPublic: true
-    },
-    {
-      id: 2,
-      name: "Workout Mix",
-      cover: "https://images.unsplash.com/photo-1571330735066-03aaa9429d89?w=300&h=300&fit=crop",
-      songCount: 32,
-      isPublic: false
-    },
-    {
-      id: 3,
-      name: "Road Trip",
-      cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop",
-      songCount: 28,
-      isPublic: true
-    },
-    {
-      id: 4,
-      name: "Study Focus",
-      cover: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=300&h=300&fit=crop",
-      songCount: 52,
-      isPublic: false
-    }
-  ];
+  const [playlists, setPlaylists] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const [activePlaylist, setActivePlaylist] = useState(null);
+
+  useEffect(() => {
+    const fetchPlaylists = async () => {
+      try {
+        const res = await fetchUserPlaylists();
+        if(res && res.data) {
+          setPlaylists(res.data || []);
+        }
+        
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlaylists();
+  }, []);
 
   return (
     <div className="playlist-panel">
       <div className="panel-header">
         <div>
           <h3>Playlists</h3>
-          <p>Danh sách playlist của bạn hoặc đã subscribe. ({playlists.length} playlists)</p>
+          {!loading && !error && (
+            <p>Danh sách playlist của bạn hoặc đã subscribe. ({playlists.length} playlists)</p>
+          )}
         </div>
-        <button className="create-playlist-btn">
+        <button className="create-playlist-btn" onClick={() => setShowCreate(true)}>
           + Create Playlist
         </button>
       </div>
 
-      <div className="playlist-grid">
-        {playlists.map(playlist => (
-          <div key={playlist.id} className="playlist-card">
-            <div className="playlist-cover">
-              <img src={playlist.cover} alt={playlist.name} />
-              <div className="playlist-overlay">
-                <button className="play-btn">▶</button>
-              </div>
-            </div>
-            <div className="playlist-info">
-              <h4>{playlist.name}</h4>
-              <p>{playlist.songCount} songs</p>
-              <span className="playlist-badge">
-                {playlist.isPublic ? "Public" : "Private"}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
+      {loading && <p>Loading playlists...</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {playlists.length === 0 && (
-        <div className="empty-state">
-          <p>Bạn chưa có playlist nào. Tạo playlist đầu tiên của bạn ngay!</p>
-          <button className="create-playlist-btn">+ Create Playlist</button>
-        </div>
+      {!loading && !error && (
+        <>
+          <div className="playlist-grid">
+            {playlists.map(pl => (
+              <div key={pl?._id} className="playlist-card" onClick={() => setActivePlaylist(pl)}>
+                <div className="playlist-cover">
+                  <img src={pl?.imgUrl || "https://via.placeholder.com/300"} alt={pl?.title} />
+                  <div className="playlist-overlay">
+                    <button className="play-btn">▶</button>
+                  </div>
+                </div>
+                <div className="playlist-info">
+                  <h4>{pl?.title}</h4>
+                  <p>{(pl?.tracks?.length || 0)} songs</p>
+                  <span className="playlist-badge">
+                    {pl?.isPublic ? "Public" : "Private"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {playlists.length === 0 && (
+            <div className="empty-state">
+              <p>Bạn chưa có playlist nào. Tạo playlist đầu tiên của bạn ngay!</p>
+              <button className="create-playlist-btn" onClick={() => setShowCreate(true)}>+ Create Playlist</button>
+            </div>
+          )}
+        </>
+      )}
+
+      {showCreate && (
+        <PlaylistCreateModal
+          onClose={() => setShowCreate(false)}
+          onSubmit={async (payload) => {
+            try {
+              const res = await createUserPlaylist(payload);
+              if(res && res.data) {
+                alert("Playlist created successfully");
+                setShowCreate(false);
+                setPlaylists(prev => [res.data.playlist, ...prev]);
+              }
+              
+            } catch (err) {
+              setError(err.message);
+            }
+          }}
+        />
+      )}
+
+      {activePlaylist && (
+        <PlaylistTracksModal
+          playlist={activePlaylist}
+          onClose={() => setActivePlaylist(null)}
+        />
       )}
     </div>
   );

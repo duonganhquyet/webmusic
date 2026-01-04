@@ -5,15 +5,14 @@ import "./Tab.css";
 import GeneralPanel from "./panels/GeneralPanel";
 import LikePanel from "./panels/LikePanel";
 import PlaylistPanel from "./panels/PlaylistPanel";
-import AlbumPanel from "./panels/AlbumPanel";
 import FollowingPanel from "./panels/FollowingPanel";
 import HistoryPanel from "./panels/HistoryPanel";
+import { useAuthContext } from "../../../contexts/auth.context";
 
 const TAB_LIST = [
   { id: "general", label: "General" },
   { id: "like", label: "Like" },
   { id: "playlist", label: "Playlist" },
-  { id: "album", label: "Album" },
   { id: "following", label: "Following" },
   { id: "history", label: "History" },
 ];
@@ -21,11 +20,14 @@ const TAB_LIST = [
 export default function Tabs({ initial = "general" }) {
   const [active, setActive] = useState(initial);
   const tabsRef = useRef([]);
-
+  const {auth} = useAuthContext();
+  const [changed, setChanged] = useState(false);
   useEffect(() => {
     const node = tabsRef.current[TAB_LIST.findIndex(t => t.id === active)];
     if (node) node.focus();
   }, [active]);
+
+
 
   function onKeyDown(e, idx) {
     if (e.key === "ArrowRight") {
@@ -71,27 +73,21 @@ export default function Tabs({ initial = "general" }) {
 
       <div className="tab-panels">
         <TabPanel id="general" active={active === "general"}>
-          <GeneralPanel />
+          <GeneralPanel changed={changed}/>
         </TabPanel>
 
         <TabPanel id="like" active={active === "like"}>
-          <LikePanel />
+          <LikePanel setChanged={setChanged} changed={changed}/>
         </TabPanel>
-
         <TabPanel id="playlist" active={active === "playlist"}>
           <PlaylistPanel />
         </TabPanel>
-
-        <TabPanel id="album" active={active === "album"}>
-          <AlbumPanel />
-        </TabPanel>
-
         <TabPanel id="following" active={active === "following"}>
           <FollowingPanel />
         </TabPanel>
 
         <TabPanel id="history" active={active === "history"}>
-          <HistoryPanel />
+          <HistoryPanel setChanged={setChanged} changed={changed}/>
         </TabPanel>
       </div>
     </div>

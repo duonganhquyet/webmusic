@@ -7,7 +7,7 @@ import { useTrackContext } from "../../contexts/track.context";
 import CommentTrack from "./comment.track";
 
 const WaveTrack = (props) => {
-    const {track,comments} = props;
+    const {track,comments,setComments} = props;
     
     const [isPlaying,setIsPlaying] = useState(false);
     const [time,setTime] = useState("0:00");
@@ -165,9 +165,11 @@ const WaveTrack = (props) => {
             </div>
             <div style={{marginTop: 50}}>
                 <CommentTrack
+                    currentTime={currentTime}
                     formatTime={formatTime}
                     comments={comments}
                     track={track}
+                    fetchCommentData={props.fetchCommentData}
                 />
             </div>
         

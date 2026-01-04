@@ -1,32 +1,62 @@
-import React from "react";
+import React, { useState } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { Row, Col, Input, Typography, Space, Avatar } from "antd";
+import { useAuthContext } from "../../contexts/auth.context";
+import { postCommentAPI } from "../../services/api";
 
 dayjs.extend(relativeTime);
 
 const { Text, Paragraph } = Typography;
 
-/**
- * Props:
- * - formatTime: (seconds:number) => string
- * - track: ITrackTop | null
- * - comments: ITrackComment[] | null
- */
+
 const CommentTrack = (props) => {
-  const { formatTime, track, comments } = props;
+  const { formatTime, track, comments, currentTime,fetchCommentData } = props;
+
+  const {auth} = useAuthContext();
+  const isLoggedIn = !!(auth && auth.user && auth.user._id);
+
+  const [value, setValue] = useState("");
+
+  const postComment = async (content, moment) => {
+    const trackId = track?._id;
+    const uId = auth?.user?._id;
+    if (!uId || !trackId) return false;
+    try {
+      const res = await postCommentAPI(uId, trackId, content, moment);
+      if (res && res.data) {
+        alert("Comment posted successfully!");
+        return true;
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Failed to post comment.");
+    }
+    return false;
+  };
 
   return (
     <div style={{ maxWidth: "100%" }}>
       <Input
-        onPressEnter={(e) => {
-          const content = e.target.value;
-          console.log("Submit comment:", content);
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onPressEnter={async () => {
+          if (!isLoggedIn) {
+            alert("You must be logged in to comment.");
+            return;
+          }
+          const content = value.trim();
+          if (content.length > 0) {
+            const ok = await postComment(content, Math.round(currentTime));
+            if (ok) {
+              setValue("");
+              fetchCommentData();
+            }
+          }
         }}
         placeholder="Comments"
-        // antd Input không có label như MUI TextField,
-        // nếu bạn muốn label, có thể bọc bằng Form.Item ở ngoài.
         variant="underlined"
+        allowClear
       />
 
       <div style={{ marginTop: 16 }}>
