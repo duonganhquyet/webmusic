@@ -1,106 +1,120 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom"; 
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { FaSearch } from "react-icons/fa";
 import "./header.css";
 
 const Header = () => {
-    // State giả lập đăng nhập
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    
-    // State cho ô tìm kiếm
-    const [searchTerm, setSearchTerm] = useState(""); 
-    
-    // Hook điều hướng
-    const navigate = useNavigate(); 
+  // ✅ KIỂM TRA ĐÚNG TOKEN
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    !!localStorage.getItem("token")
+  );
 
-    const handleLogout = () => {
-        setIsLoggedIn(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
+
+  // 🔹 STATE USER – đồng bộ avatar
+  const [user, setUser] = useState(
+    JSON.parse(localStorage.getItem("user"))
+  );
+  const userId = user?._id;
+
+  // 🔹 LẮNG NGHE AVATAR UPDATE TỪ USERPROFILE
+  useEffect(() => {
+    const handleAvatarUpdate = (e) => {
+      setUser(e.detail);
     };
+    window.addEventListener("userAvatarUpdated", handleAvatarUpdate);
 
-    const handleLoginTest = () => {
-        setIsLoggedIn(true);
+    return () => {
+      window.removeEventListener("userAvatarUpdated", handleAvatarUpdate);
     };
+  }, []);
 
-    // Xử lý tìm kiếm
-    const handleSearch = (e) => {
-        e.preventDefault(); 
-        if (searchTerm.trim()) {
-            navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
-        }
-    };
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+    setUser(null);
+    navigate("/");
+  };
 
-    // --- HÀM MỚI: Xử lý khi bấm Upload lúc CHƯA đăng nhập ---
-    const handleUploadGuest = () => {
-        alert("Vui lòng đăng nhập để thực hiện Upload!");
-        // Nếu muốn tự động chuyển sang trang login sau khi thông báo, bỏ comment dòng dưới:
-        // navigate("/login"); // hoặc gọi hàm mở popup login
-    };
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
+    }
+  };
 
-    return (
-        <header className="sc-header">
-            <div className="header-inner">
-                {/* --- LEFT SECTION --- */}
-                <div className="header-left">
-                    <Link to="/" className="logo">WEBNHAC</Link>
-                    <ul className="nav-menu">
-                        <li><Link to="/" className="nav-item">Home</Link></li>
-                        <li><Link to="/feed" className="nav-item">Feed</Link></li>
-                        <li><Link to="/library" className="nav-item">Library</Link></li>
-                    </ul>
-                </div>
+  const handleUploadGuest = () => {
+    alert("Vui lòng đăng nhập để thực hiện Upload!");
+    navigate("/login");
+  };
 
-                {/* --- CENTER SECTION (SEARCH) --- */}
-                <div className="header-center">
-                    <form className="search-form" onSubmit={handleSearch}>
-                        <input 
-                            type="text" 
-                            placeholder="Search" 
-                            className="search-input"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)} 
-                        />
-                        <button type="submit" className="search-btn">
-                            <FaSearch />
-                        </button>
-                    </form>
-                </div>
+  return (
+    <header className="sc-header">
+      <div className="header-inner">
+        {/* LEFT */}
+        <div className="header-left">
+          <Link to="/" className="logo">WEBNHAC</Link>
+          <ul className="nav-menu">
+            <li><Link to="/" className="nav-item">Home</Link></li>
+            <li><Link to="/feed" className="nav-item">Feed</Link></li>
+            <li><Link to="/library" className="nav-item">Library</Link></li>
+          </ul>
+        </div>
 
-                {/* --- RIGHT SECTION --- */}
-                <div className="header-right">
-                    {isLoggedIn ? (
-                        // === TRƯỜNG HỢP: ĐÃ ĐĂNG NHẬP ===
-                        <>
-                            {/* Dùng Link để chuyển trang bình thường */}
-                            <Link to="/upload" className="upload-link">Upload</Link>
-                            
-                            <div className="user-avatar">
-                                <span>U</span>
-                            </div>
+        {/* CENTER */}
+        <div className="header-center">
+          <form className="search-form" onSubmit={handleSearch}>
+            <input
+              type="text"
+              placeholder="Search"
+              className="search-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <button type="submit" className="search-btn">
+              <FaSearch />
+            </button>
+          </form>
+        </div>
 
-                            <button className="btn btn-logout" onClick={handleLogout}>
-                                Sign Out
-                            </button>
-                        </>
-                    ) : (
-                        // === TRƯỜNG HỢP: CHƯA ĐĂNG NHẬP ===
-                        <>
-                            {/* Thay Link bằng thẻ span và thêm sự kiện onClick báo lỗi */}
-                            <span 
-                                className="upload-link" 
-                                onClick={handleUploadGuest} 
-                                style={{ cursor: "pointer" }} // Thêm con trỏ tay để giống nút bấm
-                            >
-                                Upload
-                            </span>
-                            
-                            <button className="btn btn-login" onClick={handleLoginTest}>Sign in</button>
-                            <Link to="/signup" className="btn btn-signup">Create account</Link>
-                        </>
-                    )}
-                </div>
-            </div>
-        </header>
-    );
-}
+        {/* RIGHT */}
+        <div className="header-right">
+          {isLoggedIn ? (
+            <>
+              <Link to="/upload" className="upload-link">Upload</Link>
+
+              {/* AVATAR → PROFILE */}
+              <Link to={`/user/${userId}`} className="user-avatar">
+                {user?.imgUrl ? (
+                  <img
+                    src={`${import.meta.env.VITE_BACKEND_URL}/uploads/avatars/${user.imgUrl}`}
+                    alt="avatar"
+                    className="header-avatar-img"
+                  />
+                ) : (
+                  <span>U</span>
+                )}
+              </Link>
+
+              <button className="btn btn-logout" onClick={handleLogout}>
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="upload-link" onClick={handleUploadGuest}>
+                Upload
+              </span>
+              <Link to="/login" className="btn btn-login">Sign in</Link>
+              <Link to="/signup" className="btn btn-signup">Create account</Link>
+            </>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+};
 
 export default Header;

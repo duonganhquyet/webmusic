@@ -17,9 +17,8 @@ export const fetchSongById = (id) => {
 };
 
 export const fetchCommentById = (id) => {
-<<<<<<< HEAD
-    // SỬA: Trước đây bạn viết "/api//comments" (thừa 1 dấu /)
-    return axios.get(`${BASE_URL}/api/comments/${id}`);
+    const urlBackend =  `/api/comments/${id}`;
+    return axios.get(urlBackend);
 };
 
 /* =========================================
@@ -44,8 +43,21 @@ export const uploadSongCover = (id, formData) => {
     return axios.post(`${BASE_URL}/api/songs/${id}/cover`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
     });
-=======
-    const urlBackend =  `/api/comments/${id}`;
-    return axios.get(urlBackend);
->>>>>>> 872cc1932cd6893594de66e181cc5264b61c8988
+  
+};
+
+export const fetchHistory = async () => {
+    try {
+        // Giả sử bạn đã cấu hình axios để tự động gửi Header Authorization
+        const response = await axios.get('/api/history/get-history'); 
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching history:", error);
+        return [];
+    }
+};
+export const fetchSongsByUser = async (userId) => {
+  const res = await axios.get(`/api/users/${userId}/songs`);
+  // res lúc này === { songs: [...] }
+  return res.songs || [];
 };
