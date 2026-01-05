@@ -45,8 +45,8 @@ const UserProfile = () => {
       try {
         const res = await axios.get(`/api/user/${id}/songs`);
         if(res && res.data){
-          setTracks(res?.data?.songs || []);
-          setStats((prev) => ({ ...prev, tracks: res?.data?.songs?.length || 0 }));
+          setTracks(res?.data || []);
+          setStats((prev) => ({ ...prev, tracks: res?.data?.length || 0 }));
 
         }
       } catch (err) {

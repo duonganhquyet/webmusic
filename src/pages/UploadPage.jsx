@@ -5,6 +5,7 @@ import "../assets/UploadPage.css";
 // 👇 QUAN TRỌNG: Import component form vừa tạo ở trên
 // Nếu bạn lưu file kia trong thư mục components thì để dòng này:
 import TrackInfoForm from "../components/TrackInfoForm";
+import { uploadSong } from "../services/api";
 // Nếu bạn lưu cùng thư mục pages thì đổi thành: import TrackInfoForm from "./TrackInfoForm";
 
 const API_BASE = "http://localhost:8080";
@@ -49,26 +50,22 @@ export default function UploadPage() {
       const formData = new FormData();
       files.forEach((file) => formData.append("files", file));
 
-      const res = await fetch(`${API_BASE}/api/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Upload failed");
+      const res = await uploadSong(formData);
+      
+      if (res.statusCode !== 201) throw new Error(res.message || "Upload failed");
 
       setMessage("Tải lên thành công! File đã lưu vào thư mục filemp3.");
 
       // SỬA LỖI: Tìm đúng vị trí dữ liệu bài hát
-      const responseData = data.data || data.songs || data; 
-      const uploadedSongs = Array.isArray(responseData) ? responseData : [responseData];
+     
+      const uploadedSongs = res.data;
       
       // Kiểm tra ID
-      if (uploadedSongs.length > 0 && uploadedSongs[0]?._id) {
+      if (uploadedSongs && uploadedSongs.length > 0 && uploadedSongs[0]?._id) {
         setRecentSong(uploadedSongs[0]); 
         setShowTrackInfo(true);
       } else {
-        console.warn("Backend trả về dữ liệu thiếu ID:", data);
+        console.warn("Backend trả về dữ liệu thiếu ID:", res.data);
         setMessage("Upload thành công nhưng không lấy được ID bài hát để sửa thông tin.");
       }
     } catch (err) {

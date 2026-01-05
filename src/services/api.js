@@ -142,3 +142,10 @@ export const fetchSongsByUser = async (userId) => {
   return res.songs || [];
 };
 
+export const uploadSong = async (formData) => {
+    const urlBackend = `/api/upload`;
+    return axios.post(urlBackend, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+}
+

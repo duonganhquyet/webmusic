@@ -46,23 +46,45 @@ const ManageUploadedTrack = ({ track, onUpdate, onDelete }) => {
     setSaving(true);
 
     try {
-      const formData = new FormData();
-      formData.append("title", editForm.title);
-      formData.append("description", editForm.description);
-      formData.append("category", editForm.category);
-      if (editForm.imgFile) formData.append("cover", editForm.imgFile);
-      if (editForm.trackFile) formData.append("track", editForm.trackFile);
-
-      const res = await axios.put(`/api/songs/${editingTrack._id}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      // --- 1. Cập nhật thông tin Text (JSON) ---
+      // Backend yêu cầu JSON body cho các trường text, không nhận FormData ở endpoint này
+      const res = await axios.put(`/api/songs/${editingTrack._id}`, {
+        title: editForm.title,
+        description: editForm.description,
+        category: editForm.category,
       });
 
-      const updatedTrack = res.song || res; // interceptor trả res.data trực tiếp
-      if (!updatedTrack) throw new Error(res.message || "Cập nhật thất bại");
+      // Kiểm tra kết quả trả về (do interceptor đã trả về data)
+      if (res.statusCode && res.statusCode !== 200) {
+         throw new Error(res.message || "Cập nhật thông tin thất bại");
+      }
+
+      let updatedTrack = res.song || res.data || res;
+
+      // --- 2. Cập nhật Cover (Nếu có) ---
+      if (editForm.imgFile) {
+        const formData = new FormData();
+        formData.append("cover", editForm.imgFile);
+
+        const resCover = await axios.post(`/api/songs/${editingTrack._id}/cover`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        
+        if (resCover && (resCover.song || resCover.data)) {
+            updatedTrack = resCover.song || resCover.data;
+        }
+      }
+
+      // --- 3. Cập nhật File Nhạc (Nếu có) ---
+      // Lưu ý: Nếu backend chưa có endpoint update file nhạc riêng, phần này sẽ cần xử lý thêm.
+      if (editForm.trackFile) {
+         console.warn("Chức năng cập nhật file nhạc chưa được hỗ trợ API.");
+         alert("Lưu ý: File nhạc mới chưa được cập nhật (cần API hỗ trợ).");
+      }
 
       onUpdate(updatedTrack);
       setEditingTrack(null);
-      alert(res.message || "Cập nhật thành công!");
+      alert("Cập nhật thành công!");
     } catch (err) {
       console.error(err);
       alert(err?.message || "Cập nhật thất bại");

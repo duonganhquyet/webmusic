@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from "react-router-dom"; 
+import { Outlet, useLocation, useNavigate } from "react-router-dom"; 
 import Header from "./components/layout/header";
 import AppFooter from "./components/footer/app.footer";
 import NotificationInit from './components/NotificationInit'; // Import component thông báo
@@ -10,6 +10,7 @@ import { useAuthContext } from "./contexts/auth.context";
 const App = () => {
   const { auth, setAuth } = useAuthContext();
   const location = useLocation();
+  const nav = useNavigate();
   
   useEffect(() => {
     const checkAuthOnLoad = async () => {
@@ -18,6 +19,9 @@ const App = () => {
         setAuth({
           user : infoUser?.data?.user
         })
+      }
+      else{
+        nav("/")
       }
     }
     checkAuthOnLoad();
