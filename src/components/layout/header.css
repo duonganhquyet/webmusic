@@ -117,8 +117,18 @@
     transition: background-color 0.2s;
 }
 
-.search-input:focus {
-    background-color: #fff; /* Sáng lên khi focus */
+.search-input {
+    /* ... giữ nguyên các dòng cũ ... */
+    
+    background-color: #fff; /* Nền trắng */
+    color: #333 !important; /* QUAN TRỌNG: Đổi chữ thành màu đen để nhìn thấy */
+    
+    /* Các thuộc tính khác giữ nguyên */
+    border: none;
+    outline: none;
+    padding: 0 10px;
+    height: 100%;
+    width: 100%;
 }
 
 /* Icon kính lúp */
@@ -237,4 +247,83 @@ cursor: pointer;
     color: #fff;
     border-color: #fff;
     background-color: rgba(255, 255, 255, 0.1);
+}
+/* --- Các class cũ giữ nguyên --- */
+
+/* --- SEARCH DROPDOWN (MỚI THÊM) --- */
+.header-center {
+    position: relative; /* Quan trọng để dropdown căn theo ô tìm kiếm */
+    z-index: 1000;      /* Quan trọng để nổi lên trên các thành phần khác */
+}
+
+.search-dropdown {
+    position: absolute;
+    top: 100%; /* Nằm ngay dưới ô input */
+    left: 0;
+    width: 100%;
+    background-color: #222; /* Màu nền tối */
+    border: 1px solid #333;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+    margin-top: 2px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.search-dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #333;
+    transition: background 0.2s;
+}
+
+.search-dropdown-item:hover {
+    background-color: #333; /* Màu khi di chuột vào */
+}
+
+.search-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-right: 12px;
+}
+
+.search-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.search-title {
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-artist {
+    color: #aaa;
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.search-dropdown-footer {
+    padding: 12px;
+    text-align: center;
+    font-size: 13px;
+    color: #f50; /* Màu cam chủ đạo */
+    cursor: pointer;
+    background-color: #1a1a1a;
+    font-weight: 500;
+}
+
+.search-dropdown-footer:hover {
+    background-color: #252525;
+    text-decoration: underline;
 }

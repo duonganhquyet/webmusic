@@ -22,23 +22,34 @@ function Login() {
 
     try {
       const res = await loginUser(username, password);
+      
       if(res && res.data){
+        // 1. Lưu token
         localStorage.setItem("accessToken", res.data.accessToken);
 
+        // 2. Cập nhật Context
         setAuth({
           user: res.data.user
         })
-      }
-      else{
+
+        alert("Đăng nhập thành công!");
+
+        // === SỬA Ở ĐÂY: Kiểm tra quyền Admin ===
+        // Giả sử server trả về field "role" trong object user
+        if (res.data.user.role === "admin") {
+            navigate("/admin"); // Nếu là admin -> Sang trang Admin
+        } else {
+            navigate("/");      // Nếu là user thường -> Về trang chủ
+        }
+        // =======================================
+
+      } else {
         return setError("Login failed. Please try again.")
       }
 
-
-      alert("Đăng nhập thành công!");
-      navigate("/")
-
     } catch (err) {
-      setError(err.message)
+      console.error(err); // Log lỗi ra để debug nếu cần
+      setError(err.message || "Something went wrong")
     }
   }
 
@@ -82,7 +93,7 @@ function Login() {
               onClick={togglePasswordVisibility}
               aria-label="Toggle password visibility"
             >
-              {showPassword ? (/* SVG giữ nguyên */ 
+              {showPassword ? (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
                   <line x1="1" y1="1" x2="23" y2="23"/>
