@@ -94,7 +94,7 @@ function Signup() {
         
          {error && <p className="error-text" style={{color: "red", textAlign: 'center'}}>{error}</p>}
 
-        <div className="form-group">
+        <div className="form-group-register">
           <label htmlFor="username">Username</label>
           <input
             type="text"
@@ -110,12 +110,12 @@ function Signup() {
           ) }
         </div>
 
-        <div className="form-group">
+        <div className="form-group-register">
           <label htmlFor="name">Full Name</label>
           <input id="name" placeholder="Enter your name" required onChange={(e) => setFullName(e.target.value)} />
         </div>
 
-        <div className="form-group">
+        <div className="form-group-register">
           <label htmlFor="password">Password</label>
           <div className="password-input-wrapper">
             <input 
@@ -146,7 +146,7 @@ function Signup() {
           </div>
         </div>
 
-        <div className="form-group">
+        <div className="form-group-register">
           <label htmlFor="confirm-password">Confirm Password</label>
           <div className="password-input-wrapper">
             <input 

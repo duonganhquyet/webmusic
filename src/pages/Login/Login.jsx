@@ -53,7 +53,7 @@ function Login() {
 
         {error && <p style={{ color: "red" }}>{error}</p>}
         
-        <div className="form-group">
+        <div className="form-group-login">
           <label htmlFor="username">Username</label>
           <input
             type="text"
@@ -65,7 +65,7 @@ function Login() {
           />
         </div>
 
-        <div className="form-group">
+        <div className="form-group-login">
           <label htmlFor="password">Password</label>
           <div className="password-input-wrapper">
             <input 
