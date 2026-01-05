@@ -16,7 +16,7 @@ const App = () => {
       const infoUser = await checkSession();
       if(infoUser && infoUser.data){
         setAuth({
-          user : infoUser.data.user
+          user : infoUser?.data?.user
         })
       }
     }
@@ -25,6 +25,7 @@ const App = () => {
 
   
   // 1. Kiểm tra xem đường dẫn có phải trang Admin không
+  const isHomeRoute = location.pathname === '/';
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   // 2. Kiểm tra xem có phải trang đăng nhập/đăng ký không (Lấy từ đoạn conflict giữa)
@@ -48,7 +49,7 @@ const App = () => {
       {!shouldHideHeaderFooter && <div style={{marginBottom:46}}></div> }
 
       <Outlet />
-      {!shouldHideHeaderFooter && <div style={{marginTop:50}}></div> }
+      {!isHomeRoute && !shouldHideHeaderFooter && <div style={{marginTop:46}}></div> }
 
       {/* 3. Tương tự với Footer */}
       {!shouldHideHeaderFooter && <AppFooter/>}

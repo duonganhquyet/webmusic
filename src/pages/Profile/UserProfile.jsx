@@ -3,17 +3,9 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "../../services/axios.customize";
 import ManageUploadedTrack from "./ManageUploadedTrack";
 import "./UserProfile.css";
+import { useAuthContext } from "../../contexts/auth.context";
 
 const ITEMS_PER_PAGE = 5;
-
-/* ===== SAFE JSON PARSE ===== */
-const safeParse = (value) => {
-  try {
-    return value ? JSON.parse(value) : null;
-  } catch {
-    return null;
-  }
-};
 
 const UserProfile = () => {
   const { id } = useParams();
@@ -26,18 +18,23 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const {auth,setAuth} = useAuthContext();
 
-  const currentUser = safeParse(localStorage.getItem("user"));
+  const currentUser = auth?.user;
   const isOwner = currentUser?._id === id;
 
   /* ================= FETCH DATA ================= */
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        if (isOwner) setUser(currentUser);
+        if (isOwner) {
+            setUser(currentUser);
+        }
         else {
-          const res = await axios.get(`/api/users/${id}`);
-          setUser(res.user);
+          const res = await axios.get(`/api/user/public/${id}`);
+          if(res && res.data){
+              setUser(res?.data?.user);
+          }
         }
       } catch (err) {
         console.error(err);
@@ -46,16 +43,19 @@ const UserProfile = () => {
 
     const fetchTracks = async () => {
       try {
-        const res = await axios.get(`/api/users/${id}/songs`);
-        setTracks(res.songs || []);
-        setStats((prev) => ({ ...prev, tracks: res.songs?.length || 0 }));
+        const res = await axios.get(`/api/user/${id}/songs`);
+        if(res && res.data){
+          setTracks(res?.data?.songs || []);
+          setStats((prev) => ({ ...prev, tracks: res?.data?.songs?.length || 0 }));
+
+        }
       } catch (err) {
         console.error(err);
       }
     };
 
     Promise.all([fetchProfile(), fetchTracks()]).finally(() => setLoading(false));
-  }, [id]);
+  }, [id, isOwner, currentUser]);
 
   /* ===== PAGINATION ===== */
   const totalPages = Math.ceil(tracks.length / ITEMS_PER_PAGE);
@@ -78,16 +78,18 @@ const UserProfile = () => {
 
     try {
       setUploading(true);
-      const res = await axios.put(`/api/users/${id}/avatar`, formData, {
+      const res = await axios.put(`/api/user/${id}/avatar`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
       if (res?.user?.imgUrl) {
         setUser((prev) => ({ ...prev, imgUrl: res.user.imgUrl }));
-        localStorage.setItem(
-          "user",
-          JSON.stringify({ ...currentUser, imgUrl: res.user.imgUrl })
-        );
+        setAuth((prev) => ({
+          user: {
+            ...prev.user,
+            imgUrl: res.user.imgUrl,
+          },
+        }) );
       }
     } catch (err) {
       alert("Upload avatar failed");
@@ -124,8 +126,8 @@ const UserProfile = () => {
             <img
               src={
                 user.imgUrl
-                  ? `${import.meta.env.VITE_BACKEND_URL}/uploads/avatars/${user.imgUrl}`
-                  : "/default_avatar.png"
+                  ? `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${user.imgUrl}`
+                  : "../../../public/default_avatar.png"
               }
               className="profile-avatar"
             />

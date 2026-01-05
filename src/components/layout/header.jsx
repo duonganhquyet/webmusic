@@ -80,7 +80,11 @@ const Header = () => {
                             
                             <Link to={`/user/${auth.user._id}`} className="user-avatar">
                                 {/* <span></span> */}
-                                <img src={`../../../public/${auth.user.imgUrl}`} style={{objectFit: "cover", width:"100%"}} alt="Ảnh avatar" />
+                                {(auth.user.imgUrl === "default_avatar.png") ? (<img src={`../../../public/${auth.user.imgUrl}`} style={{objectFit: "cover", width:"100%"}} alt="Ảnh avatar" />):
+                                <img src={`${import.meta.env.VITE_BACKEND_URL}/images/avatar/${auth?.user?.imgUrl}`} style={{objectFit: "cover", width:"100%"}} alt="Ảnh avatar" />
+                                }
+                                
+                                
                             </Link>
 
                             <button className="btn btn-logout" onClick={handleLogout}>
