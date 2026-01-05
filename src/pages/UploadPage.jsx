@@ -1,30 +1,21 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { notifyWarning, notifyError, notifySuccess } from '../utils/notification';
 import "../assets/UploadPage.css";
 
-// Cổng Backend (8080)
-const API_BASE = "http://localhost:8080";
-const MAX_RECORD_SECONDS = 600; // 10 phút
+// 👇 QUAN TRỌNG: Import component form vừa tạo ở trên
+// Nếu bạn lưu file kia trong thư mục components thì để dòng này:
+import TrackInfoForm from "../components/TrackInfoForm";
+// Nếu bạn lưu cùng thư mục pages thì đổi thành: import TrackInfoForm from "./TrackInfoForm";
 
-// Hàm format thời gian (MM:SS)
+const API_BASE = "http://localhost:8080";
+const MAX_RECORD_SECONDS = 600; 
+
 function formatTime(seconds) {
   const s = Math.floor(seconds);
   const m = Math.floor(s / 60);
   const r = s % 60;
   return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
 }
-
-// Hàm chuẩn hóa đường dẫn ảnh/nhạc từ Backend
-const getFullUrl = (path) => {
-  if (!path) return null;
-  if (path.startsWith("http")) return path; // Nếu là link online (zing mp3, nhaccuatui...)
-  
-  // Đảm bảo đường dẫn bắt đầu bằng dấu "/" để ghép với API_BASE
-  // Ví dụ: path là "images/abc.jpg" -> "/images/abc.jpg"
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${API_BASE}${normalizedPath}`;
-};
 
 export default function UploadPage() {
   const [isDragging, setDragging] = useState(false);
@@ -43,21 +34,19 @@ export default function UploadPage() {
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
 
-  // TRACK INFO (Sau khi upload xong)
+  // TRACK INFO
   const [recentSong, setRecentSong] = useState(null);
   const [showTrackInfo, setShowTrackInfo] = useState(false);
 
   const navigate = useNavigate();
 
-  // ========== 1. UPLOAD AUDIO (Lưu vào folder filemp3) ==========
+  // --- LOGIC UPLOAD FILE (Đã sửa lỗi lấy ID) ---
   const uploadFiles = async (files) => {
     try {
       if (files.length === 0) return;
       
       setMessage("Đang tải lên server...");
       const formData = new FormData();
-      // Backend đang dùng upload.single('files') hoặc array('files')
-      // Đảm bảo key này khớp với backend (thường là "file" hoặc "files")
       files.forEach((file) => formData.append("files", file));
 
       const res = await fetch(`${API_BASE}/api/upload`, {
@@ -70,12 +59,17 @@ export default function UploadPage() {
 
       setMessage("Tải lên thành công! File đã lưu vào thư mục filemp3.");
 
-      // Backend trả về mảng songs hoặc 1 song
-      const uploadedSongs = data.songs || (Array.isArray(data) ? data : [data]);
+      // SỬA LỖI: Tìm đúng vị trí dữ liệu bài hát
+      const responseData = data.data || data.songs || data; 
+      const uploadedSongs = Array.isArray(responseData) ? responseData : [responseData];
       
-      if (uploadedSongs.length > 0) {
-        setRecentSong(uploadedSongs[0]); // Lấy bài vừa up để sửa info
+      // Kiểm tra ID
+      if (uploadedSongs.length > 0 && uploadedSongs[0]?._id) {
+        setRecentSong(uploadedSongs[0]); 
         setShowTrackInfo(true);
+      } else {
+        console.warn("Backend trả về dữ liệu thiếu ID:", data);
+        setMessage("Upload thành công nhưng không lấy được ID bài hát để sửa thông tin.");
       }
     } catch (err) {
       console.error(err);
@@ -83,6 +77,7 @@ export default function UploadPage() {
     }
   };
 
+  // --- CÁC HÀM XỬ LÝ SỰ KIỆN ---
   const handleDrop = (e) => {
     e.preventDefault();
     setDragging(false);
@@ -97,7 +92,6 @@ export default function UploadPage() {
     uploadFiles(files);
   };
 
-  // ========== 2. LOGIC GHI ÂM (Record) ==========
   const toggleRecordPanel = () => setRecordPanelOpen((prev) => !prev);
 
   const clearPreviousRecording = () => {
@@ -113,7 +107,7 @@ export default function UploadPage() {
 
     timerRef.current = setInterval(() => {
       setRecordTime((prev) => {
-        const next = prev + 0.2; // Cập nhật mỗi 200ms
+        const next = prev + 0.2; 
         if (next >= MAX_RECORD_SECONDS) {
           if (mediaRecorderRef.current) mediaRecorderRef.current.stop();
           setIsRecording(false);
@@ -140,7 +134,6 @@ export default function UploadPage() {
         alert("Trình duyệt không hỗ trợ micro.");
         return;
       }
-
       clearPreviousRecording();
       setSelectedFiles([]);
 
@@ -158,7 +151,6 @@ export default function UploadPage() {
         setRecordedBlob(blob);
         const url = URL.createObjectURL(blob);
         setRecordedAudioURL(url);
-
         stream.getTracks().forEach((t) => t.stop());
         stopTimer();
         setIsPaused(false);
@@ -205,7 +197,6 @@ export default function UploadPage() {
       alert("Chưa có file ghi âm.");
       return;
     }
-    // Tạo file từ Blob, đặt tên đuôi .webm
     const file = new File([recordedBlob], `recording-${Date.now()}.webm`, { type: "audio/webm" });
     setSelectedFiles([file]);
     await uploadFiles([file]);
@@ -306,7 +297,7 @@ export default function UploadPage() {
           )}
         </div>
 
-        {/* Form sửa thông tin bài hát (Hiển thị sau khi upload xong) */}
+        {/* Render Component Form con */}
         {showTrackInfo && recentSong && (
           <TrackInfoForm
             song={recentSong}
@@ -314,152 +305,10 @@ export default function UploadPage() {
               setRecentSong(newSong);
               setShowTrackInfo(false);
               setMessage("Cập nhật thông tin thành công!");
-              // Có thể navigate về trang nghe nhạc nếu muốn
-              // navigate(`/track/${newSong._id}`);
             }}
           />
         )}
       </main>
-    </div>
-  );
-}
-
-// ========= COMPONENT SỬA THÔNG TIN & UPLOAD ẢNH (Lưu vào folder images) =========
-function TrackInfoForm({ song, onUpdated }) {
-  // State form
-  const [title, setTitle] = useState(song.title || "");
-  const [description, setDescription] = useState(song.description || ""); // Artist
-  const [category, setCategory] = useState(song.category || ""); // Genre
-  
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  // Xử lý hiển thị ảnh cover
-  const [imgUrl, setImgUrl] = useState(getFullUrl(song.imgUrl));
-  const [uploadingCover, setUploadingCover] = useState(false);
-  const coverInputRef = useRef(null);
-
-  // Cập nhật thông tin văn bản
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      setSaving(true);
-      setError("");
-
-      const res = await fetch(`${API_BASE}/api/songs/${song._id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description, category }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Lỗi cập nhật");
-
-      onUpdated && onUpdated(data.song);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Upload ảnh Cover (Vào folder images)
-  const handleCoverChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("cover", file); // Key 'cover' phải khớp với backend multer
-
-    try {
-      setUploadingCover(true);
-      setError("");
-
-      const res = await fetch(`${API_BASE}/api/songs/${song._id}/cover`, {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Lỗi upload ảnh");
-
-      // Cập nhật UI ngay lập tức với đường dẫn mới từ Backend (trong folder images)
-      setImgUrl(getFullUrl(data.song.imgUrl));
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setUploadingCover(false);
-      e.target.value = ""; // Reset input
-    }
-  };
-
-  return (
-    <div className="trackinfo-wrapper">
-      <h2 className="trackinfo-title">Chỉnh sửa thông tin bài hát</h2>
-      <div className="trackinfo-container">
-        
-        {/* Phần Ảnh Bìa (Cover) */}
-        <div className="artwork-box" onClick={() => coverInputRef.current.click()}>
-          {imgUrl ? (
-            <img src={imgUrl} alt="Cover" className="artwork-img" />
-          ) : (
-            <div className="artwork-placeholder">
-               <span>📷</span>
-               <p>Tải ảnh bìa</p>
-            </div>
-          )}
-          
-          <input
-            type="file"
-            accept="image/*"
-            hidden
-            ref={coverInputRef}
-            onChange={handleCoverChange}
-          />
-          
-          {uploadingCover && <div className="artwork-overlay">Đang tải...</div>}
-        </div>
-
-        {/* Form Nhập Liệu */}
-        <form className="trackinfo-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Tên bài hát *</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              placeholder="Ví dụ: Lạc Trôi"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Ca sĩ / Nghệ sĩ (Description)</label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Ví dụ: Sơn Tùng M-TP"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Thể loại (Category)</label>
-            <input
-              type="text"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              placeholder="Ví dụ: POP, BALLAD..."
-            />
-          </div>
-
-          {error && <p className="error-text">⚠️ {error}</p>}
-
-          <button type="submit" className="btn save-btn" disabled={saving}>
-            {saving ? "Đang lưu..." : "Lưu & Hoàn tất"}
-          </button>
-        </form>
-      </div>
     </div>
   );
 }

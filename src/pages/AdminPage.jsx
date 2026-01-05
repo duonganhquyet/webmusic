@@ -2,65 +2,85 @@ import React, { useState, useEffect } from 'react';
 import { 
   Layout, Menu, Table, Card, Row, Col, Statistic, 
   Button, Avatar, Tag, Popconfirm, message, Space, 
-  Modal, Form, Input, Select, Drawer 
+  Modal, Form, Input, Select, Upload 
 } from 'antd';
 import { 
   DashboardOutlined, SoundOutlined, UserOutlined, 
   DeleteOutlined, EditOutlined, PlusOutlined, 
-  LogoutOutlined, BarChartOutlined 
+  LogoutOutlined, BarChartOutlined, UploadOutlined 
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { useAuthContext } from '../contexts/auth.context';
 import { fetchHomeData } from '../services/api'; 
 
 const { Sider, Content } = Layout;
 const { Option } = Select;
 
-// --- GIẢ LẬP API (Bạn thay bằng gọi API thật) ---
-// const apiCall = (url, method, data) => axios(...)
-const mockApiDelay = () => new Promise(resolve => setTimeout(resolve, 500));
+const API_BASE = "http://localhost:8080";
 
 const AdminPage = () => {
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
-  const [key, setKey] = useState('1'); // 1: Dashboard, 2: Songs, 3: Users
+  const { auth, setAuth } = useAuthContext();
   
-  // Data State
+  const [collapsed, setCollapsed] = useState(false);
+  const [key, setKey] = useState('1'); 
+  
   const [songs, setSongs] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Modal State (Dùng chung cho cả Add và Edit)
+  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState(''); // 'SONG' hoặc 'USER'
-  const [actionType, setActionType] = useState(''); // 'ADD' hoặc 'EDIT'
+  const [modalType, setModalType] = useState(''); 
+  const [actionType, setActionType] = useState(''); 
   const [editingItem, setEditingItem] = useState(null);
+  
+  // --- STATE FILE UPLOAD ---
+  const [mp3File, setMp3File] = useState(null);   
+  const [coverFile, setCoverFile] = useState(null); 
+  // State quản lý danh sách file trên UI (để hiển thị tên file)
+  const [fileListMp3, setFileListMp3] = useState([]);
+  const [fileListCover, setFileListCover] = useState([]);
+  
   const [form] = Form.useForm();
 
-  // 1. CHECK QUYỀN ADMIN KHI VÀO TRANG
-  useEffect(() => {
-    // Giả sử thông tin user lưu trong localStorage
-    const userStr = localStorage.getItem('user'); 
-    const currentUser = userStr ? JSON.parse(userStr) : null;
+  // ✅ Hàm lấy Token từ LocalStorage
+  const getToken = () => localStorage.getItem("accessToken");
 
-    if (!currentUser || currentUser.role !== 'admin') {
-      message.error('Bạn không có quyền truy cập trang này!');
-      navigate('/'); // Đá về trang chủ
-    } else {
+  // Hàm xử lý link ảnh
+  const getImageUrl = (path) => {
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
+    return `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+  };
+
+  // CHECK QUYỀN
+  useEffect(() => {
+    if (auth.user && auth.user.role !== 'admin') {
+      message.error('Bạn không có quyền truy cập trang quản trị!');
+      navigate('/'); 
+    } else if (auth.user && auth.user.role === 'admin') {
       loadData();
     }
-  }, [navigate]);
+  }, [auth, navigate]);
 
   const loadData = async () => {
     setLoading(true);
     try {
       const res = await fetchHomeData();
-      setSongs(res.allSongs || res.songs || []);
+      const listSongs = res.allSongs || res.songs || (res.data && res.data.allSongs) || [];
+      setSongs(listSongs);
       
-      // Giả lập Users (Thay bằng API fetch users thật)
-      setUsers([
-        { _id: 'u1', username: 'admin', name: 'Super Admin', role: 'admin', imgUrl: '' },
-        { _id: 'u2', username: 'denvau', name: 'Đen Vâu', role: 'user', imgUrl: '' },
-      ]);
+      // ✅ THÊM HEADER AUTH VÀO ĐÂY
+      const resUser = await fetch(`${API_BASE}/api/users`, {
+        headers: {
+            "Authorization": `Bearer ${getToken()}`
+        }
+      });
+      if (resUser.ok) {
+        const dataUser = await resUser.json();
+        setUsers(dataUser.data || dataUser.users || []);
+      } 
     } catch (error) {
       console.error(error);
     } finally {
@@ -68,14 +88,19 @@ const AdminPage = () => {
     }
   };
 
-  // --- XỬ LÝ FORM (THÊM / SỬA) ---
+  // MỞ MODAL
   const handleOpenModal = (type, action, item = null) => {
     setModalType(type);
     setActionType(action);
     setEditingItem(item);
     setIsModalOpen(true);
     
-    // Nếu là sửa, fill dữ liệu vào form
+    // Reset file mỗi khi mở modal
+    setMp3File(null);
+    setCoverFile(null);
+    setFileListMp3([]);
+    setFileListCover([]);
+
     if (action === 'EDIT' && item) {
       form.setFieldsValue(item);
     } else {
@@ -83,47 +108,136 @@ const AdminPage = () => {
     }
   };
 
+  // --- XỬ LÝ LOGIC LƯU ---
   const handleModalOk = async () => {
     try {
-      const values = await form.validateFields();
+      const values = await form.validateFields(); 
+      const token = getToken(); // Lấy token
+
+      // KIỂM TRA FILE MP3
+      if (modalType === 'SONG' && actionType === 'ADD' && !mp3File) {
+          return message.error("Vui lòng chọn file nhạc (MP3)!");
+      }
+
       setLoading(true);
-      
-      console.log(`Đang ${actionType} ${modalType}:`, values);
-      
-      // GỌI API TƯƠNG ỨNG TẠI ĐÂY
-      await mockApiDelay(); // Giả lập chờ API
-      
-      message.success(`${actionType === 'ADD' ? 'Thêm' : 'Cập nhật'} thành công!`);
+
+      // === TRƯỜNG HỢP 1: THÊM MỚI BÀI HÁT ===
+      if (modalType === 'SONG' && actionType === 'ADD') {
+          
+          // BƯỚC 1: Upload MP3 (FormData -> KHÔNG set Content-Type thủ công)
+          const formDataMp3 = new FormData();
+          formDataMp3.append("files", mp3File); 
+
+          const resUpload = await fetch(`${API_BASE}/api/upload`, {
+              method: "POST",
+              headers: { 
+                  "Authorization": `Bearer ${token}` 
+              },
+              body: formDataMp3
+          });
+          const dataUpload = await resUpload.json();
+          if (!resUpload.ok) throw new Error(dataUpload.message || "Lỗi upload nhạc");
+
+          // Lấy ID bài hát
+          const newSong = Array.isArray(dataUpload.data) ? dataUpload.data[0] : dataUpload.data;
+          const newSongId = newSong._id;
+
+          // BƯỚC 2: Cập nhật thông tin (JSON -> CẦN Content-Type)
+          await fetch(`${API_BASE}/api/songs/${newSongId}`, {
+              method: "PUT",
+              headers: { 
+                  'Content-Type': 'application/json',
+                  "Authorization": `Bearer ${token}`
+              },
+              body: JSON.stringify(values)
+          });
+
+          // BƯỚC 3: Upload ảnh bìa
+          if (coverFile) {
+              const formDataCover = new FormData();
+              formDataCover.append("cover", coverFile);
+              await fetch(`${API_BASE}/api/songs/${newSongId}/cover`, {
+                  method: "POST",
+                  headers: { "Authorization": `Bearer ${token}` },
+                  body: formDataCover
+              });
+          }
+
+          message.success("Thêm bài hát mới thành công!");
+
+      } 
+      // === TRƯỜNG HỢP 2: CÁC TRƯỜNG HỢP KHÁC ===
+      else {
+          let url = `${API_BASE}/api/${modalType === 'SONG' ? 'songs' : 'users'}`;
+          let method = actionType === 'ADD' ? 'POST' : 'PUT';
+          
+          if (actionType === 'EDIT') url += `/${editingItem._id}`;
+
+          const res = await fetch(url, {
+              method: method,
+              headers: { 
+                  'Content-Type': 'application/json',
+                  "Authorization": `Bearer ${token}`
+              },
+              body: JSON.stringify(values)
+          });
+          
+          if (!res.ok) {
+              const errData = await res.json();
+              throw new Error(errData.message || "Lỗi thao tác");
+          }
+
+          // Upload ảnh bìa mới khi sửa bài hát
+          if (modalType === 'SONG' && actionType === 'EDIT' && coverFile) {
+              const formDataCover = new FormData();
+              formDataCover.append("cover", coverFile);
+              await fetch(`${API_BASE}/api/songs/${editingItem._id}/cover`, {
+                  method: "POST",
+                  headers: { "Authorization": `Bearer ${token}` },
+                  body: formDataCover
+              });
+          }
+          message.success("Cập nhật thành công!");
+      }
+
       setIsModalOpen(false);
-      loadData(); // Load lại bảng
+      loadData(); 
+
     } catch (error) {
-      message.error("Có lỗi xảy ra, vui lòng kiểm tra lại form");
+      console.error(error);
+      message.error(error.message || "Có lỗi xảy ra");
     } finally {
       setLoading(false);
     }
   };
 
-  // --- XỬ LÝ XÓA ---
   const handleDelete = async (id, type) => {
     try {
-      // await axios.delete(`/api/${type}s/${id}`);
-      await mockApiDelay();
+      const endpoint = type === 'song' ? 'songs' : 'users';
+      // ✅ THÊM HEADER AUTH VÀO ĐÂY
+      await fetch(`${API_BASE}/api/${endpoint}/${id}`, { 
+          method: 'DELETE',
+          headers: { "Authorization": `Bearer ${getToken()}` }
+      });
       message.success('Đã xóa thành công!');
       loadData();
     } catch (error) {
-      message.error('Xóa thất bại');
+      message.error("Xóa thất bại");
     }
   };
 
-  // --- CẤU HÌNH CỘT CHO BẢNG SONGS ---
+  const handleLogoutAdmin = () => {
+      setAuth({ user: {} });
+      localStorage.removeItem("accessToken");
+      navigate("/");
+  }
+
+  // --- COLUMN DEFINITIONS ---
   const songColumns = [
-    { title: 'Cover', dataIndex: 'imgUrl', render: u => <Avatar shape="square" src={u} /> },
-    { title: 'Title', dataIndex: 'title', width: '30%' },
-    { title: 'Artist', render: (_, r) => r.uploader?.name || r.description || "Unknown" },
-    { 
-      title: 'Stats', 
-      render: (_, r) => <Space><SoundOutlined />{r.countPlay} <br/><BarChartOutlined />{r.countLike}</Space> 
-    },
+    { title: 'Cover', dataIndex: 'imgUrl', render: (u) => <Avatar shape="square" size={50} src={getImageUrl(u)} /> },
+    { title: 'Title', dataIndex: 'title', width: '25%' },
+    { title: 'Artist', render: (_, r) => (r.uploader && r.uploader.name) ? r.uploader.name : (r.description || "Unknown") },
+    { title: 'Stats', render: (_, r) => <Space><SoundOutlined />{r.countPlay} <br/><BarChartOutlined />{r.countLike}</Space> },
     {
       title: 'Action',
       render: (_, record) => (
@@ -137,15 +251,11 @@ const AdminPage = () => {
     }
   ];
 
-  // --- CẤU HÌNH CỘT CHO BẢNG USERS ---
   const userColumns = [
+    { title: 'Avatar', dataIndex: 'imgUrl', render: (u) => <Avatar src={getImageUrl(u)} /> },
     { title: 'Username', dataIndex: 'username', render: t => <b>{t}</b> },
     { title: 'Name', dataIndex: 'name' },
-    { 
-      title: 'Role', 
-      dataIndex: 'role', 
-      render: r => <Tag color={r === 'admin' ? 'red' : 'green'}>{r.toUpperCase()}</Tag> 
-    },
+    { title: 'Role', dataIndex: 'role', render: r => <Tag color={r === 'admin' ? 'red' : 'green'}>{r ? r.toUpperCase() : 'USER'}</Tag> },
     {
       title: 'Action',
       render: (_, record) => (
@@ -160,23 +270,19 @@ const AdminPage = () => {
   ];
 
   return (
-    // Layout fullscreen riêng biệt, nền tối nhẹ cho Sidebar
     <Layout style={{ minHeight: '100vh' }}>
       <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} theme="dark">
         <div style={{ height: 50, margin: 16, background: 'rgba(255, 255, 255, 0.2)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
           ADMIN PANEL
         </div>
         <Menu 
-          theme="dark" 
-          defaultSelectedKeys={['1']} 
-          mode="inline"
-          onClick={(e) => setKey(e.key)}
+          theme="dark" defaultSelectedKeys={['1']} mode="inline" onClick={(e) => setKey(e.key)}
           items={[
             { key: '1', icon: <DashboardOutlined />, label: 'Dashboard' },
             { key: '2', icon: <SoundOutlined />, label: 'Quản lý Bài hát' },
             { key: '3', icon: <UserOutlined />, label: 'Quản lý Tài khoản' },
             { type: 'divider' },
-            { key: '4', icon: <LogoutOutlined />, label: 'Thoát Admin', danger: true }
+            { key: '4', icon: <LogoutOutlined />, label: 'Đăng xuất', danger: true }
           ]}
         />
       </Sider>
@@ -185,30 +291,24 @@ const AdminPage = () => {
         <Content style={{ margin: '16px' }}>
           <div style={{ padding: 24, background: '#fff', minHeight: '100%', borderRadius: 8 }}>
             
-            {/* 1. DASHBOARD */}
             {key === '1' && (
-              <>
-                <h2>Thống kê tổng quan</h2>
-                <Row gutter={16} style={{ marginTop: 20 }}>
+              <Row gutter={16}>
                   <Col span={8}><Card><Statistic title="Tổng bài hát" value={songs.length} prefix={<SoundOutlined />} /></Card></Col>
                   <Col span={8}><Card><Statistic title="Tổng thành viên" value={users.length} prefix={<UserOutlined />} /></Card></Col>
-                  <Col span={8}><Card><Statistic title="Tổng lượt nghe" value={songs.reduce((a, b) => a + (b.countPlay || 0), 0)} prefix={<BarChartOutlined />} /></Card></Col>
-                </Row>
-              </>
+                  <Col span={8}><Card><Statistic title="Lượt nghe" value={songs.reduce((a, b) => a + (b.countPlay || 0), 0)} prefix={<BarChartOutlined />} /></Card></Col>
+              </Row>
             )}
 
-            {/* 2. SONG MANAGER */}
             {key === '2' && (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
                   <h2>Danh sách bài hát</h2>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal('SONG', 'ADD')}>Thêm bài hát</Button>
+                  <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal('SONG', 'ADD')}>Thêm Bài hát</Button>
                 </div>
                 <Table dataSource={songs} columns={songColumns} rowKey="_id" loading={loading} />
               </>
             )}
 
-            {/* 3. USER MANAGER */}
             {key === '3' && (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -219,38 +319,77 @@ const AdminPage = () => {
               </>
             )}
 
-            {/* 4. LOGOUT LOGIC */}
-            {key === '4' && (() => {
-               navigate('/'); 
-               return null; 
-            })()}
+            {key === '4' && (
+               <div style={{textAlign: 'center', marginTop: 50}}>
+                   <h3>Bạn có chắc chắn muốn đăng xuất?</h3>
+                   <Button type="primary" danger onClick={handleLogoutAdmin}>Xác nhận Đăng xuất</Button>
+               </div>
+            )}
 
           </div>
         </Content>
       </Layout>
 
-      {/* --- MODAL CHUNG CHO ADD/EDIT --- */}
+      {/* --- MODAL --- */}
       <Modal
         title={`${actionType === 'ADD' ? 'Thêm mới' : 'Chỉnh sửa'} ${modalType === 'SONG' ? 'Bài hát' : 'Tài khoản'}`}
         open={isModalOpen}
         onOk={handleModalOk}
         onCancel={() => setIsModalOpen(false)}
-        okText="Lưu"
+        okText={loading ? "Đang xử lý..." : "Lưu"}
+        confirmLoading={loading}
         cancelText="Hủy"
       >
         <Form form={form} layout="vertical">
           {modalType === 'SONG' ? (
             <>
-              <Form.Item name="title" label="Tên bài hát" rules={[{ required: true }]}>
+              {/* --- PHẦN UPLOAD FILE ĐÃ SỬA UI --- */}
+              {actionType === 'ADD' && (
+                  <Form.Item label="File Nhạc (MP3)" required>
+                      <Upload 
+                        beforeUpload={(file) => { 
+                            setMp3File(file); 
+                            setFileListMp3([file]); // Cập nhật UI list
+                            return false; 
+                        }}
+                        onRemove={() => { 
+                            setMp3File(null); 
+                            setFileListMp3([]); 
+                        }}
+                        fileList={fileListMp3} // Gắn list file vào UI
+                        maxCount={1} accept="audio/*"
+                      >
+                          <Button icon={<UploadOutlined />}>Chọn file nhạc</Button>
+                      </Upload>
+                  </Form.Item>
+              )}
+
+              <Form.Item label="Ảnh bìa (Cover)">
+                  <Upload 
+                    beforeUpload={(file) => { 
+                        setCoverFile(file); 
+                        setFileListCover([file]); 
+                        return false; 
+                    }}
+                    onRemove={() => { 
+                        setCoverFile(null); 
+                        setFileListCover([]); 
+                    }}
+                    fileList={fileListCover}
+                    maxCount={1} accept="image/*"
+                  >
+                      <Button icon={<UploadOutlined />}>Chọn ảnh bìa</Button>
+                  </Upload>
+              </Form.Item>
+              {/* ----------------------------- */}
+
+              <Form.Item name="title" label="Tên bài hát" rules={[{ required: true, message: 'Nhập tên bài hát' }]}>
                 <Input />
               </Form.Item>
               <Form.Item name="description" label="Nghệ sĩ / Mô tả">
                 <Input />
               </Form.Item>
-              <Form.Item name="imgUrl" label="Link Ảnh bìa">
-                <Input />
-              </Form.Item>
-              <Form.Item name="trackUrl" label="Link Nhạc (MP3)">
+              <Form.Item name="category" label="Thể loại">
                 <Input />
               </Form.Item>
             </>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom"; 
 import { FaSearch } from "react-icons/fa";
 import "./header.css";
@@ -8,20 +8,67 @@ const Header = () => {
 
     const { auth, setAuth } = useAuthContext();
     
-    const isLoggedIn = auth.user._id ? true : false;
+    const isLoggedIn = auth.user && auth.user._id ? true : false;
     console.log("check auth", auth);
     
     // State cho ô tìm kiếm
     const [searchTerm, setSearchTerm] = useState(""); 
+
+    // --- STATE MỚI: Gợi ý tìm kiếm (Dropdown) ---
+    const [suggestions, setSuggestions] = useState([]);
+    const [showDropdown, setShowDropdown] = useState(false);
     
-    // Hook điều hướng
+    // Hook điều hướng & Ref để xử lý click ra ngoài
     const navigate = useNavigate(); 
+    const searchRef = useRef(null);
 
+    // --- 1. XỬ LÝ LIVE SEARCH (Tự động tìm khi gõ) ---
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(async () => {
+            // Sửa điều kiện: > 0 để gõ 1 chữ "m" cũng tìm được
+            if (searchTerm.trim().length > 0) { 
+                try {
+                    // Gọi trực tiếp URL không cần biến API_BASE
+                    const res = await fetch(`http://localhost:8080/api/search?q=${encodeURIComponent(searchTerm)}`);
+                    const data = await res.json();
+                    
+                    const results = data.data || data.songs || (Array.isArray(data) ? data : []);
+                    setSuggestions(results.slice(0, 5)); // Lấy 5 kết quả
+                    setShowDropdown(true);
+                } catch (error) {
+                    console.error("Lỗi tìm kiếm:", error);
+                }
+            } else {
+                setSuggestions([]);
+                setShowDropdown(false);
+            }
+        }, 500); // Đợi 0.5s sau khi ngừng gõ
 
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchTerm]);
 
-    // Xử lý tìm kiếm
+    // Đóng dropdown khi click ra ngoài
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setShowDropdown(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    // --- 2. Xử lý khi chọn bài hát từ gợi ý ---
+    const handleSelectSuggestion = (songId) => {
+        navigate(`/track/${songId}`);
+        setShowDropdown(false);
+        setSearchTerm(""); 
+    };
+
+    // Xử lý tìm kiếm (Enter hoặc nút Search)
     const handleSearch = (e) => {
         e.preventDefault(); 
+        setShowDropdown(false);
         if (searchTerm.trim()) {
             navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
         }
@@ -30,9 +77,8 @@ const Header = () => {
     // --- HÀM MỚI: Xử lý khi bấm Upload lúc CHƯA đăng nhập ---
     const handleUploadGuest = () => {
         alert("Vui lòng đăng nhập để thực hiện Upload!");
-        // Nếu muốn tự động chuyển sang trang login sau khi thông báo, bỏ comment dòng dưới:
-        // navigate("/login"); // hoặc gọi hàm mở popup login
     };
+    
     const handleLogout = () => {
         // Xóa thông tin đăng nhập khỏi context
         setAuth({ user: {} });
@@ -55,7 +101,8 @@ const Header = () => {
                 </div>
 
                 {/* --- CENTER SECTION (SEARCH) --- */}
-                <div className="header-center">
+                {/* Thêm ref và style position: relative để dropdown bám dính vào đây */}
+                <div className="header-center" ref={searchRef} style={{position: 'relative', zIndex: 1000}}>
                     <form className="search-form" onSubmit={handleSearch}>
                         <input 
                             type="text" 
@@ -63,11 +110,35 @@ const Header = () => {
                             className="search-input"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)} 
+                            onFocus={() => { if(suggestions.length > 0) setShowDropdown(true) }}
                         />
                         <button type="submit" className="search-btn">
                             <FaSearch />
                         </button>
                     </form>
+
+                    {/* === PHẦN MỚI: DROPDOWN GỢI Ý === */}
+                    {showDropdown && suggestions.length > 0 && (
+                        <div className="search-dropdown">
+                            {suggestions.map((song) => (
+                                <div 
+                                    key={song._id} 
+                                    className="search-dropdown-item"
+                                    onClick={() => handleSelectSuggestion(song._id)}
+                                >
+                                    <img 
+                                        src={song.imgUrl ? (song.imgUrl.startsWith("http") ? song.imgUrl : `http://localhost:8080${song.imgUrl.startsWith("/") ? "" : "/"}${song.imgUrl}`) : "/default-cover.png"} 
+                                        alt="" 
+                                        className="search-thumb"
+                                    />
+                                    <div className="search-info">
+                                        <div className="search-title">{song.title}</div>
+                                        <div className="search-artist">{song.description}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* --- RIGHT SECTION --- */}
@@ -98,7 +169,7 @@ const Header = () => {
                             <span 
                                 className="upload-link" 
                                 onClick={handleUploadGuest} 
-                                style={{ cursor: "pointer" }} // Thêm con trỏ tay để giống nút bấm
+                                style={{ cursor: "pointer" }} 
                             >
                                 Upload
                             </span>
