@@ -2,7 +2,6 @@
   background: #121212;
   color: #fff;
   min-height: 100vh;
-  padding-bottom: 120px; /* thêm khoảng trống cho footer */
 }
 
 /* ===== BANNER ===== */
@@ -338,6 +337,7 @@ html, body {
 .follow-btn.following {
   background: #333;
 }
+
 
 .track-title-wrapper {
   width: 50%;

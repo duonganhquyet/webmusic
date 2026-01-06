@@ -5,15 +5,15 @@ import { useAuthContext } from "../../contexts/auth.context";
 const FollowButton = ({ targetUserId, onStatsChange }) => {
   const { auth } = useAuthContext();
   const currentUser = auth?.user;
+  const token = auth?.token || localStorage.getItem("accessToken");
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const isOwner = String(currentUser?._id) === String(targetUserId);
 
-  // ================= CHECK STATUS =================
   useEffect(() => {
-    if (!currentUser || isOwner) {
+    if (isOwner || !token) {
       setLoading(false);
       return;
     }
@@ -30,22 +30,19 @@ const FollowButton = ({ targetUserId, onStatsChange }) => {
     };
 
     fetchStatus();
-  }, [targetUserId, currentUser, isOwner]);
+  }, [targetUserId, currentUser, isOwner, token]);
 
-  // ================= TOGGLE =================
   const handleToggleFollow = async () => {
+    if (!currentUser || !token) {
+      alert("Vui lòng đăng nhập để sử dụng tính năng này!");
+      return;
+    }
+
     try {
-      const res = await axios.post("/api/follow", {
-        followingId: targetUserId,
-      });
-
-      const { isFollowing: newStatus, targetUserFollowersCount } =
-        res?.data || {};
-
+      const res = await axios.post("/api/follow", { followingId: targetUserId });
+      const { isFollowing: newStatus, targetUserFollowersCount } = res || {};
       if (typeof newStatus === "boolean") {
         setIsFollowing(newStatus);
-
-        // ✅ chỉ update followers của profile
         onStatsChange?.(targetUserFollowersCount);
       }
     } catch (err) {
@@ -53,7 +50,7 @@ const FollowButton = ({ targetUserId, onStatsChange }) => {
     }
   };
 
-  if (!currentUser || isOwner || loading) return null;
+  if (loading || isOwner) return null;
 
   return (
     <button
@@ -66,3 +63,4 @@ const FollowButton = ({ targetUserId, onStatsChange }) => {
 };
 
 export default FollowButton;
+    

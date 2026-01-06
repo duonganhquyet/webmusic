@@ -4,7 +4,7 @@ import ManageUploadedTrack from "./ManageUploadedTrack";
 import FollowButton from "./FollowButton";
 import "./UserProfile.css";
 import { useAuthContext } from "../../contexts/auth.context";
-import { fetchFollowers, fetchFollowing, fetchSongsByUser } from "../../services/api";
+import { fetchSongsByUser } from "../../services/api";
 import axios from "../../services/axios.customize";
 
 const ITEMS_PER_PAGE = 5;
@@ -23,10 +23,9 @@ const UserProfile = () => {
 
   const { auth, setAuth } = useAuthContext();
   const currentUser = auth?.user;
-  const isOwner = String(currentUser?._id) === String(id);
+  const isOwner = currentUser && String(currentUser._id) === String(id);
 
-  // ======== Track title marquee refs & flags ========
-  const titleRefs = useRef([]); // store ref for each track
+  const titleRefs = useRef([]);
   const [overflowFlags, setOverflowFlags] = useState([]);
 
   useEffect(() => {
@@ -42,31 +41,60 @@ const UserProfile = () => {
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        let profileUser = isOwner ? currentUser : null;
+        let profileUser = null;
 
-        if (!profileUser) {
-          const res = await axios.get(`/api/user/public/${id}`);
-          if (!res?.data?.user) {
-            setUser(null);
-            return;
+        if (isOwner) {
+          profileUser = currentUser;
+        } else {
+          try {
+            const res = await axios.get(`/api/user/public/${id}`, { skipAuth: true });
+            profileUser = res?.user || res?.data?.user || null;
+          } catch (err) {
+            console.warn("Không thể fetch public user:", err);
+            profileUser = null;
           }
-          profileUser = res.data.user;
         }
 
+        if (!profileUser) {
+          setUser(null);
+          return;
+        }
         setUser(profileUser);
 
-        const [followersList, followingObj] = await Promise.all([
-          fetchFollowers(profileUser._id),
-          fetchFollowing(profileUser._id),
-        ]);
+        // ================= FETCH FOLLOWERS/FOLLOWING =================
+        let followersCount = 0;
+        let followingCount = 0;
+
+        if (currentUser) {
+          // Logged in → dùng route private
+          try {
+            const [followersList, followingObj] = await Promise.all([
+              axios.get(`/api/follow/followers/${profileUser._id}`),
+              axios.get(`/api/follow/following/${profileUser._id}`),
+            ]);
+            followersCount = Array.isArray(followersList) ? followersList.length : 0;
+            followingCount = followingObj?.count || 0;
+          } catch {}
+        } else {
+          // Not logged in → dùng route public
+          try {
+            const [followersRes, followingRes] = await Promise.all([
+              axios.get(`/api/follow/public/followers/${profileUser._id}`, { skipAuth: true }),
+              axios.get(`/api/follow/public/following/${profileUser._id}`, { skipAuth: true }),
+            ]);
+            followersCount = followersRes?.followers || 0;
+            followingCount = followingRes?.following || 0;
+          } catch {}
+        }
 
         setStats((prev) => ({
           ...prev,
-          followers: Array.isArray(followersList) ? followersList.length : 0,
-          following: followingObj?.count || 0,
+          followers: followersCount,
+          following: followingCount,
         }));
 
-        const userTracks = await fetchSongsByUser(profileUser._id);
+        // ================= FETCH TRACKS =================
+        const userTracks = await fetchSongsByUser(profileUser._id).catch(() => []);
         setTracks(userTracks);
         setStats((prev) => ({ ...prev, tracks: userTracks.length }));
       } catch (err) {
@@ -80,14 +108,12 @@ const UserProfile = () => {
     fetchProfileData();
   }, [id, isOwner, currentUser]);
 
-  /* ================= PAGINATION ================= */
   const totalPages = Math.ceil(tracks.length / ITEMS_PER_PAGE);
   const paginatedTracks = tracks.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  /* ================= AVATAR ================= */
   const handleAvatarClick = () => {
     if (isOwner) fileInputRef.current.click();
   };
@@ -105,11 +131,12 @@ const UserProfile = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      if (res?.data?.user?.imgUrl) {
-        setUser((prev) => ({ ...prev, imgUrl: res.data.user.imgUrl }));
+      if (res?.user?.imgUrl || res?.data?.user?.imgUrl) {
+        const newImg = res.user?.imgUrl || res.data.user.imgUrl;
+        setUser((prev) => ({ ...prev, imgUrl: newImg }));
         setAuth((prev) => ({
           ...prev,
-          user: { ...prev.user, imgUrl: res.data.user.imgUrl },
+          user: { ...prev.user, imgUrl: newImg },
         }));
       }
     } catch {
@@ -119,7 +146,6 @@ const UserProfile = () => {
     }
   };
 
-  /* ================= RENDER ================= */
   if (loading)
     return (
       <div className="profile-page">
@@ -178,6 +204,7 @@ const UserProfile = () => {
                     followers: newFollowersCount ?? prev.followers,
                   }))
                 }
+                requireLoginAlert={true}
               />
             )}
           </div>
