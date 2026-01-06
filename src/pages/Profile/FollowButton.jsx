@@ -5,15 +5,15 @@ import { useAuthContext } from "../../contexts/auth.context";
 const FollowButton = ({ targetUserId, onStatsChange }) => {
   const { auth } = useAuthContext();
   const currentUser = auth?.user;
-  const token = auth?.token || localStorage.getItem("accessToken");
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const isOwner = String(currentUser?._id) === String(targetUserId);
 
+  // ================= CHECK STATUS =================
   useEffect(() => {
-    if (isOwner || !token) {
+    if (!currentUser || isOwner) {
       setLoading(false);
       return;
     }
@@ -30,37 +30,47 @@ const FollowButton = ({ targetUserId, onStatsChange }) => {
     };
 
     fetchStatus();
-  }, [targetUserId, currentUser, isOwner, token]);
+  }, [targetUserId, currentUser, isOwner]);
 
+  // ================= TOGGLE =================
   const handleToggleFollow = async () => {
-    if (!currentUser || !token) {
+    if (!currentUser) {
       alert("Vui lòng đăng nhập để sử dụng tính năng này!");
       return;
     }
 
     try {
       const res = await axios.post("/api/follow", { followingId: targetUserId });
-      const { isFollowing: newStatus, targetUserFollowersCount } = res || {};
+
+      // Lấy trạng thái mới và followers count từ backend
+      const { isFollowing: newStatus, targetUserFollowersCount } = res?.data || {};
+
       if (typeof newStatus === "boolean") {
         setIsFollowing(newStatus);
-        onStatsChange?.(targetUserFollowersCount);
+
+        // Nếu backend trả followers count → dùng, nếu không → tăng giảm thủ công
+        if (typeof targetUserFollowersCount === "number") {
+          onStatsChange?.(targetUserFollowersCount);
+        } else {
+          onStatsChange?.((prev) => prev + (newStatus ? 1 : -1));
+        }
       }
     } catch (err) {
       console.error("toggle follow error:", err);
     }
   };
 
-  if (loading || isOwner) return null;
+  // Không hiển thị cho owner hoặc đang loading
+  if (isOwner || loading) return null;
 
   return (
     <button
       className={`follow-btn ${isFollowing ? "following" : ""}`}
       onClick={handleToggleFollow}
     >
-      {isFollowing ? "Following" : "Follow"}
+      {currentUser ? (isFollowing ? "Following" : "Follow") : "Follow"}
     </button>
   );
 };
 
 export default FollowButton;
-    
