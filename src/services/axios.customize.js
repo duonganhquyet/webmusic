@@ -29,7 +29,6 @@ instance.interceptors.response.use(function (response) {
     if(error && error.response && error.response.data){
       return error.response.data;
     }
-
     return config;
   },
   function (error) {

@@ -8,7 +8,6 @@ const ManageUploadedTrack = ({ track, onUpdate, onDelete }) => {
     description: "",
     category: "",
     imgFile: null, // cover mới
-    trackFile: null, // track mới
   });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -20,7 +19,6 @@ const ManageUploadedTrack = ({ track, onUpdate, onDelete }) => {
       description: track.description || "",
       category: track.category || "",
       imgFile: null,
-      trackFile: null,
     });
   };
 
@@ -35,33 +33,25 @@ const ManageUploadedTrack = ({ track, onUpdate, onDelete }) => {
     }
   };
 
-  const handleTrackChange = (e) => {
-    if (e.target.files.length > 0) {
-      setEditForm((prev) => ({ ...prev, trackFile: e.target.files[0] }));
-    }
-  };
-
   const handleSaveEdit = async () => {
     if (!editingTrack) return;
     setSaving(true);
 
     try {
-      // --- 1. Cập nhật thông tin Text (JSON) ---
-      // Backend yêu cầu JSON body cho các trường text, không nhận FormData ở endpoint này
+      // 1. Cập nhật thông tin Text (JSON)
       const res = await axios.put(`/api/songs/${editingTrack._id}`, {
         title: editForm.title,
         description: editForm.description,
         category: editForm.category,
       });
 
-      // Kiểm tra kết quả trả về (do interceptor đã trả về data)
       if (res.statusCode && res.statusCode !== 200) {
          throw new Error(res.message || "Cập nhật thông tin thất bại");
       }
 
-      let updatedTrack = res.song || res.data || res;
+      let updatedTrack = res.data || res;
 
-      // --- 2. Cập nhật Cover (Nếu có) ---
+      // 2. Cập nhật Cover (Nếu có)
       if (editForm.imgFile) {
         const formData = new FormData();
         formData.append("cover", editForm.imgFile);
@@ -70,16 +60,9 @@ const ManageUploadedTrack = ({ track, onUpdate, onDelete }) => {
           headers: { "Content-Type": "multipart/form-data" },
         });
         
-        if (resCover && (resCover.song || resCover.data)) {
-            updatedTrack = resCover.song || resCover.data;
+        if (resCover && (resCover.data)) {
+            updatedTrack = resCover.data;
         }
-      }
-
-      // --- 3. Cập nhật File Nhạc (Nếu có) ---
-      // Lưu ý: Nếu backend chưa có endpoint update file nhạc riêng, phần này sẽ cần xử lý thêm.
-      if (editForm.trackFile) {
-         console.warn("Chức năng cập nhật file nhạc chưa được hỗ trợ API.");
-         alert("Lưu ý: File nhạc mới chưa được cập nhật (cần API hỗ trợ).");
       }
 
       onUpdate(updatedTrack);
@@ -103,7 +86,7 @@ const ManageUploadedTrack = ({ track, onUpdate, onDelete }) => {
         onDelete(track._id);
         alert(res.message || "Xóa thành công!");
       } else {
-        throw new Error("Xóa thất bại");
+        throw new Error(res.message || "Xóa thất bại");
       }
     } catch (err) {
       console.error(err);
@@ -117,7 +100,7 @@ const ManageUploadedTrack = ({ track, onUpdate, onDelete }) => {
     <>
       <div className="track-actions">
         <button onClick={openEditModal} disabled={saving || deleting}>
-          Edit
+          Edit Info
         </button>
         <button
           onClick={handleDelete}
@@ -131,7 +114,7 @@ const ManageUploadedTrack = ({ track, onUpdate, onDelete }) => {
       {editingTrack && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h2>Edit Track</h2>
+            <h2>Edit Track Info</h2>
 
             <label>Title</label>
             <input
@@ -156,9 +139,6 @@ const ManageUploadedTrack = ({ track, onUpdate, onDelete }) => {
 
             <label>Cover Image</label>
             <input type="file" accept="image/*" onChange={handleCoverChange} />
-
-            <label>Track File (.mp3)</label>
-            <input type="file" accept="audio/*" onChange={handleTrackChange} />
 
             <div className="modal-buttons">
               <button

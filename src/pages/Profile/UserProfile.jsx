@@ -1,9 +1,11 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import axios from "../../services/axios.customize";
 import ManageUploadedTrack from "./ManageUploadedTrack";
+import FollowButton from "./FollowButton";
 import "./UserProfile.css";
 import { useAuthContext } from "../../contexts/auth.context";
+import { fetchFollowers, fetchFollowing, fetchSongsByUser } from "../../services/api";
+import axios from "../../services/axios.customize";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -18,46 +20,67 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const {auth,setAuth} = useAuthContext();
 
+  const { auth, setAuth } = useAuthContext();
   const currentUser = auth?.user;
-  const isOwner = currentUser?._id === id;
+  const isOwner = String(currentUser?._id) === String(id);
+
+  // ======== Track title marquee refs & flags ========
+  const titleRefs = useRef([]); // store ref for each track
+  const [overflowFlags, setOverflowFlags] = useState([]);
+
+  useEffect(() => {
+    const flags = tracks.map((_, index) => {
+      const el = titleRefs.current[index];
+      if (!el) return false;
+      return el.scrollWidth > el.parentElement.offsetWidth;
+    });
+    setOverflowFlags(flags);
+  }, [tracks]);
 
   /* ================= FETCH DATA ================= */
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchProfileData = async () => {
       try {
-        if (isOwner) {
-            setUser(currentUser);
-        }
-        else {
+        let profileUser = isOwner ? currentUser : null;
+
+        if (!profileUser) {
           const res = await axios.get(`/api/user/public/${id}`);
-          if(res && res.data){
-              setUser(res?.data?.user);
+          if (!res?.data?.user) {
+            setUser(null);
+            return;
           }
+          profileUser = res.data.user;
         }
+
+        setUser(profileUser);
+
+        const [followersList, followingObj] = await Promise.all([
+          fetchFollowers(profileUser._id),
+          fetchFollowing(profileUser._id),
+        ]);
+
+        setStats((prev) => ({
+          ...prev,
+          followers: Array.isArray(followersList) ? followersList.length : 0,
+          following: followingObj?.count || 0,
+        }));
+
+        const userTracks = await fetchSongsByUser(profileUser._id);
+        setTracks(userTracks);
+        setStats((prev) => ({ ...prev, tracks: userTracks.length }));
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching profile:", err);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
     };
 
-    const fetchTracks = async () => {
-      try {
-        const res = await axios.get(`/api/user/${id}/songs`);
-        if(res && res.data){
-          setTracks(res?.data || []);
-          setStats((prev) => ({ ...prev, tracks: res?.data?.length || 0 }));
-
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    Promise.all([fetchProfile(), fetchTracks()]).finally(() => setLoading(false));
+    fetchProfileData();
   }, [id, isOwner, currentUser]);
 
-  /* ===== PAGINATION ===== */
+  /* ================= PAGINATION ================= */
   const totalPages = Math.ceil(tracks.length / ITEMS_PER_PAGE);
   const paginatedTracks = tracks.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -82,22 +105,21 @@ const UserProfile = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      if (res?.user?.imgUrl) {
-        setUser((prev) => ({ ...prev, imgUrl: res.user.imgUrl }));
+      if (res?.data?.user?.imgUrl) {
+        setUser((prev) => ({ ...prev, imgUrl: res.data.user.imgUrl }));
         setAuth((prev) => ({
-          user: {
-            ...prev.user,
-            imgUrl: res.user.imgUrl,
-          },
-        }) );
+          ...prev,
+          user: { ...prev.user, imgUrl: res.data.user.imgUrl },
+        }));
       }
-    } catch (err) {
+    } catch {
       alert("Upload avatar failed");
     } finally {
       setUploading(false);
     }
   };
 
+  /* ================= RENDER ================= */
   if (loading)
     return (
       <div className="profile-page">
@@ -114,9 +136,9 @@ const UserProfile = () => {
 
   return (
     <div className="profile-page">
-      {/* ===== BANNER ===== */}
       <div className="profile-banner">
         <img src="/default_banner.jpg" className="banner-img" />
+
         <div className="profile-info">
           <div
             className="avatar-wrapper"
@@ -127,7 +149,7 @@ const UserProfile = () => {
               src={
                 user.imgUrl
                   ? `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${user.imgUrl}`
-                  : "../../../public/default_avatar.png"
+                  : "/default_avatar.png"
               }
               className="profile-avatar"
             />
@@ -146,6 +168,18 @@ const UserProfile = () => {
           <div className="profile-text">
             <h1>{user.name}</h1>
             <span className="username">@{user.username}</span>
+
+            {!isOwner && (
+              <FollowButton
+                targetUserId={id}
+                onStatsChange={(newFollowersCount) =>
+                  setStats((prev) => ({
+                    ...prev,
+                    followers: newFollowersCount ?? prev.followers,
+                  }))
+                }
+              />
+            )}
           </div>
         </div>
       </div>
@@ -160,10 +194,7 @@ const UserProfile = () => {
             <>
               <p className="empty-text">No uploaded tracks yet</p>
               {isOwner && (
-                <button
-                  className="upload-btn"
-                  onClick={() => navigate("/upload")}
-                >
+                <button className="upload-btn" onClick={() => navigate("/upload")}>
                   Upload now
                 </button>
               )}
@@ -171,29 +202,33 @@ const UserProfile = () => {
           ) : (
             <>
               <div className="results-grid">
-                {paginatedTracks.map((track) => (
+                {paginatedTracks.map((track, index) => (
                   <div key={track._id} className="track-card">
                     <div className="track-img-wrapper">
                       <img
                         src={
                           track.imgUrl
-                            ? track.imgUrl.startsWith("http") ||
-                              track.imgUrl.startsWith("/uploads")
+                            ? track.imgUrl.startsWith("http") || track.imgUrl.startsWith("/images")
                               ? `${import.meta.env.VITE_BACKEND_URL}${track.imgUrl}`
-                              : `${import.meta.env.VITE_BACKEND_URL}/uploads/${track.imgUrl}`
+                              : `${import.meta.env.VITE_BACKEND_URL}/images/${track.imgUrl}`
                             : "/default-cover.png"
                         }
                         className="track-cover"
                       />
-                      <Link
-                        to={`/track/${track._id}`}
-                        className="play-overlay"
-                      >
+                      <Link to={`/track/${track._id}`} className="play-overlay">
                         ▶
                       </Link>
                     </div>
+
                     <div className="track-info">
-                      <div className="track-title">{track.title}</div>
+                      <div className="track-title-wrapper">
+                        <div
+                          className={`track-title ${overflowFlags[index] ? "marquee" : ""}`}
+                          ref={(el) => (titleRefs.current[index] = el)}
+                        >
+                          {track.title}
+                        </div>
+                      </div>
                       <div className="track-artist-line">{track.description}</div>
                     </div>
 
@@ -202,9 +237,7 @@ const UserProfile = () => {
                         track={track}
                         onUpdate={(updatedTrack) =>
                           setTracks((prev) =>
-                            prev.map((t) =>
-                              t._id === updatedTrack._id ? updatedTrack : t
-                            )
+                            prev.map((t) => (t._id === updatedTrack._id ? updatedTrack : t))
                           )
                         }
                         onDelete={(deletedId) => {
@@ -217,7 +250,6 @@ const UserProfile = () => {
                 ))}
               </div>
 
-              {/* ===== PAGINATION ===== */}
               {totalPages > 1 && (
                 <div className="pagination">
                   <button
@@ -228,19 +260,15 @@ const UserProfile = () => {
                     ‹
                   </button>
 
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (page) => (
-                      <button
-                        key={page}
-                        className={`page-btn ${
-                          page === currentPage ? "active" : ""
-                        }`}
-                        onClick={() => setCurrentPage(page)}
-                      >
-                        {page}
-                      </button>
-                    )
-                  )}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      className={`page-btn ${page === currentPage ? "active" : ""}`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  ))}
 
                   <button
                     className="page-btn"

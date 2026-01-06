@@ -91,6 +91,26 @@ export const fetchFollowingArtists = () => {
     return axios.get(urlBackend);
 }
 
+// Lấy followers của một user
+export const fetchFollowers = (userId) => {
+  return axios.get(`/api/follow/followers/${userId}`); // trả array trực tiếp
+};
+
+// Lấy following của một user
+export const fetchFollowing = (userId) => {
+  return axios.get(`/api/follow/following/${userId}`); // trả { following, count }
+};
+
+// check trạng thái follow
+export const checkFollowStatus = (targetUserId) => {
+  return axios.get(`/api/follow/status/${targetUserId}`);
+};
+
+// toggle follow/unfollow
+export const toggleFollow = (targetUserId) => {
+  return axios.post("/api/follow", { followingId: targetUserId });
+};
+
 export const fetchUserHistory = () => {
     const urlBackend = `/api/user/history`;
     return axios.get(urlBackend);
@@ -137,10 +157,17 @@ export const fetchHistory = async () => {
     }
 };
 export const fetchSongsByUser = async (userId) => {
-  const res = await axios.get(`/api/users/${userId}/songs`);
-  // res lúc này === { songs: [...] }
-  return res.songs || [];
+  try {
+    const res = await axios.get(`/api/user/${userId}/songs`);
+    // axios interceptor trả về res.data trực tiếp
+    // giả sử backend trả về: { statusCode, message, data: [...] }
+    return res.data || []; // trả mảng bài hát
+  } catch (err) {
+    console.error("Error fetching user songs:", err);
+    return [];
+  }
 };
+
 
 export const uploadSong = async (formData) => {
     const urlBackend = `/api/upload`;
