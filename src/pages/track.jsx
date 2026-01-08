@@ -2,24 +2,33 @@ import { useEffect, useState } from "react";
 import Container from "../components/container";
 import WaveTrack from "../components/track/wave.track";
 import { useParams } from "react-router-dom";
-import { fetchCommentById, fetchSongById} from "../services/api"; //
+import { checkSongLikeStatus, fetchCommentById, fetchSongById } from "../services/api";
 import { useAuthContext } from "../contexts/auth.context"; //
 
 // 1. Import UI Ant Design
 import { Button, message, Tooltip } from "antd";
 import { DownloadOutlined } from "@ant-design/icons";
 
-const TrackPage = () => {
-    const { id } = useParams();
-    const { auth } = useAuthContext();
+const  TrackPage =  ()  =>  {
+    const  { id } = useParams();
+    console.log("check track id:",id);
+    const [track,setTrack] = useState(null);
+    const [comments,setComments] = useState(null);
+    const [isLiked, setIsLiked] = useState(false);
 
-    const [track, setTrack] = useState(null);
-    const [comments, setComments] = useState(null);
-
-    // Cấu hình URL Backend (đảm bảo đúng port backend của bạn)
-    const API_BASE = "http://localhost:8080"; 
-
-    // Load Comment
+    const checkLikeStatus = async (songId) => {
+        try {
+            const response = await checkSongLikeStatus(songId);
+            if(response && response.data){
+                setIsLiked(response.data.liked);
+            }
+        } catch (error) {
+            console.log("Error checking like status:", error);
+        }
+    }
+    
+    
+    
     const fetchCommentData = async () => {
         const response = await fetchCommentById(id);
         if(response && response.data){
@@ -27,36 +36,22 @@ const TrackPage = () => {
         }
     }
 
-    // Load Bài hát
     useEffect(() => {
         const fetchDataDetail = async () => {
             const response = await fetchSongById(id);
             if(response && response.data){
                 setTrack(response.data);
+                console.log("track data:",response.data);
             }
         }
-        if(id) {
-            fetchDataDetail();
-            fetchCommentData();
-        }
-    }, [id]);
+        fetchDataDetail();
+
+        
+        fetchCommentData();
+
+        checkLikeStatus(id);
+    },[]);
     
-    // ✅ PHẦN QUAN TRỌNG: LƯU LỊCH SỬ (Giữ nguyên)
-    useEffect(() => {
-        if (id && auth?.user?._id) {
-            const token = localStorage.getItem("accessToken");
-            console.log("TrackPage - Chuẩn bị lưu lịch sử. Token:", token);
-
-            if (token) {
-                saveToHistory(id, token)
-                    .then(() => console.log("✅ Đã lưu lịch sử thành công!"))
-                    .catch(err => console.error("❌ Lỗi lưu lịch sử (401?):", err));
-            } else {
-                console.warn("⚠️ Không tìm thấy token trong localStorage!");
-            }
-        }
-    }, [id, auth]); //
-
     // 2. Hàm xử lý tải file
     const handleDownload = async () => {
         if (!track || !track.trackUrl) {
@@ -125,6 +120,8 @@ const TrackPage = () => {
                     track={track}
                     comments={comments}
                     fetchCommentData={fetchCommentData}
+                    setIsLiked={setIsLiked}
+                    isLiked={isLiked}
                 />
             </Container>
         </>

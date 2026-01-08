@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useNavigate } from "react-router-dom"
 import { checkUsername, registerUser } from '../../services/api'
-import { notifySuccess } from '../../utils/notification'
 
 // ✅ 1. Import hàm thông báo
 import { notifySuccess, notifyError } from '../../utils/notification'

@@ -14,5 +14,5 @@ export function resolveAvatarUrl(path) {
   if (!path) return null;
   if (/^https?:\/\//i.test(path)) return path;
   if (path.startsWith("/")) return `${BACKEND_URL}${path}`;
-  return `${BACKEND_URL}/images/avatar/${path}`;
+  return `${BACKEND_URL}/images/${path}`;
 }

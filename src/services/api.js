@@ -117,7 +117,7 @@ export const fetchFollowers = (userId, isPublic = false) => {
 export const fetchFollowing = (userId, isPublic = false) => {
     const urlBackend = isPublic 
         ? `/api/follow/public/following/${userId}` 
-        : `/api/follow/following/${userId}`;
+        : `/api/follow/following`;
     return axios.get(urlBackend);
 };
 
@@ -187,4 +187,26 @@ export const uploadSong = async (formData) => {
     return axios.post(urlBackend, formData, {
         headers: { "Content-Type": "multipart/form-data" },
     });
-};
+}
+
+export const updateHistoryAPI = (trackId) => {
+    const urlBackend = `/api/history/add/${trackId}`;
+    return axios.post(urlBackend);
+}
+
+export const checkSongLikeStatus = (songId) => {
+    const urlBackend = `/api/song/${songId}/like/status`;
+    return axios.get(urlBackend,{
+        params: {id: songId}
+    });
+}
+// check xem đã follow chưa
+export const checkFollowStatusAPI = (userId) => {
+    const urlBackend = `/api/follow/status/${userId}`;
+    return axios.get(urlBackend);
+}
+
+export const followUserAPI = (followingId) => {
+    const urlBackend = `/api/follow/${followingId}`;
+    return axios.post(urlBackend);
+}

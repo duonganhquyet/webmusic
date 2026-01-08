@@ -46,7 +46,7 @@ export default function FollowingPanel() {
           <div className="following-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
             {listFollowed.map((f) => {
               const user = f.following || f; // safety: some responses may flatten
-              const avatar = resolveAvatarUrl(user?.imgUrl) || "/default_avatar.png";
+              const avatar = resolveAvatarUrl(user?.imgUrl) || "../../../../../public/default_avatar.png";
               const uid = user?._id || f?._id;
               return (
                 <Link key={uid} to={`/user/${uid}`} style={{ textDecoration: 'none' }}>

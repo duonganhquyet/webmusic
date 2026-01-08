@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { Row, Col, Input, Typography, Space, Avatar } from "antd";
+import { Row, Col, Input, Typography, Space, Avatar, Button } from "antd";
+import { UserAddOutlined, CheckOutlined } from "@ant-design/icons";
 import { useAuthContext } from "../../contexts/auth.context";
-import { postCommentAPI } from "../../services/api";
+import { postCommentAPI, followUserAPI, checkFollowStatusAPI } from "../../services/api";
 
 dayjs.extend(relativeTime);
 
@@ -17,6 +18,49 @@ const CommentTrack = (props) => {
   const isLoggedIn = !!(auth && auth.user && auth.user._id);
 
   const [value, setValue] = useState("");
+  const [isFollowed, setIsFollowed] = useState(false);
+
+  // --- LOGIC FOLLOW ---
+  const handleFollow = async () => {
+    if (!isLoggedIn) {
+        alert("Vui lòng đăng nhập để theo dõi tác giả!");
+        return;
+    }
+    const uploaderId = track?.uploader?._id || track?.uploader;
+    if (!uploaderId) return;
+
+    try {
+        if (isFollowed) {
+            await followUserAPI(uploaderId);
+            setIsFollowed(false);
+        } else {
+            await followUserAPI(uploaderId);
+            setIsFollowed(true);
+        }
+    } catch (error) {
+        console.error("Lỗi Follow:", error);
+    }
+  };
+  
+  // Reset trạng thái follow khi đổi bài hát
+  useEffect(()=> {
+    const uploaderId = track?.uploader?._id || track?.uploader;
+    if(!uploaderId) return;
+
+    const checkFollowStatus = async () => {
+      try {
+        const response = await checkFollowStatusAPI(uploaderId);
+        if (response && response.data) {
+            setIsFollowed(response.data.isFollowing);
+        }
+      } catch (e) {
+        console.error("Check follow status error", e);
+      }
+    }
+    checkFollowStatus();
+
+  }, [track]);
+  // --------------------
 
   const postComment = async (content, moment) => {
     const trackId = track?._id;
@@ -64,14 +108,31 @@ const CommentTrack = (props) => {
           <Col xs={24} lg={6} xl={4}>
             <div style={{display: "flex",alignContent: "center",flexDirection: "column"}}>
               <img
-                src={"/default-avatar.png"}
-                alt=""
+                src={(track?.uploader?.imgUrl && track?.uploader?.imgUrl !== "default_avatar.png") 
+                                    ? `${import.meta.env.VITE_BACKEND_URL}/images/${track?.uploader?.imgUrl}` 
+                                    : "../../../public/default_avatar.png"}
+                alt="Lỗi tải ảnh"
                 width={150}
                 height={150}
-                style={{ objectFit: "cover", borderRadius: 8, alignSelf: "center" }}
+                style={{ objectFit: "cover", borderRadius: "50%", alignSelf: "center" }}
               />
               <div style={{ marginTop: 8, textAlign: "center" }}>
                 <Text>{track?.uploader?.name}</Text>
+                 
+                 {/* === NÚT FOLLOW (MỚI) === */}
+                 {track?.uploader?._id !== auth?.user?._id && (
+                    <div style={{ marginTop: 5 }}>
+                        <Button
+                            type={isFollowed ? "primary" : "default"}
+                            icon={isFollowed ? <CheckOutlined /> : <UserAddOutlined />}
+                            onClick={handleFollow}
+                            size="small"
+                        >
+                            {isFollowed ? "Following" : "Follow"}
+                        </Button>
+                    </div>
+                 )}
+
               </div>
             </div>
           </Col>
@@ -91,7 +152,10 @@ const CommentTrack = (props) => {
                 >
                   <Space align="start" size={12}>
                     <Avatar
-                      src={"/default-avatar.png"}
+                      src={(comment?.user?.imgUrl && comment?.user?.imgUrl !== "default_avatar.png") 
+                                    ? `${import.meta.env.VITE_BACKEND_URL}/images/${comment.user.imgUrl}` 
+                                    : "../../../public/default_avatar.png"}
+                                    
                       size={40}
                     />
                     <div>

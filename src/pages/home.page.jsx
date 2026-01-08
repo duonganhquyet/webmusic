@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Pagination } from 'antd'; 
 import Card from '../components/Card';
 import HistoryTrack from '../components/historyTrack';
+import { fetchHomeData, updateHistoryAPI } from '../services/api';
 import MusicHotSlider from '../components/MusicHotSlider'; 
-import { fetchHomeData } from '../services/api';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuthContext } from '../contexts/auth.context';
 import { resolveAssetUrl } from '../utils/url';
@@ -12,6 +12,8 @@ const API_BASE = "http://localhost:8080";
 
 const Home = () => {
   const [data, setData] = useState({ topSongs: [], allSongs: [] });
+  const {auth} = useAuthContext();
+  const isLoggedIn = !!(auth && auth?.user && auth?.user._id);
   const [loading, setLoading] = useState(true); 
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15; // ✅ Tăng lên 15 bài để chia hết cho 5 (5 bài x 3 dòng = 15)
@@ -61,6 +63,14 @@ const Home = () => {
     const section = document.getElementById('all-songs-section');
     if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+  const handleUpdateHistory = async (trackId) => {
+    try {
+        // Gọi API để cập nhật lịch sử nghe
+        const response = await updateHistoryAPI(trackId);
+    } catch (error) {
+        console.error("Lỗi cập nhật lịch sử nghe:", error);
+    }
+  };
 
   const getSubtitle = (item) => {
      if (item.description && item.description.trim() !== "" && item.description !== "Unknown Artist") return item.description;
@@ -91,7 +101,7 @@ const Home = () => {
             <h2 style={{ fontSize: '18px', color: '#fff', fontWeight: 'bold', borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '15px' }}>
               Music Hot (Top Views)
             </h2>
-            {!loading && <MusicHotSlider songs={data.topSongs} getImageUrl={getImageUrl} getSubtitle={getSubtitle} />}
+            {!loading && <MusicHotSlider songs={data.topSongs} getImageUrl={getImageUrl} getSubtitle={getSubtitle} isLoggedIn={isLoggedIn}/>}
           </section>
 
           {/* Section 2: ALL SONGS */}

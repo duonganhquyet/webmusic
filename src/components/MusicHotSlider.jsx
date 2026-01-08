@@ -4,7 +4,7 @@ import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import Card from './Card'; 
 
-const MusicHotSlider = ({ songs, getImageUrl, getSubtitle }) => {
+const MusicHotSlider = ({ songs, getImageUrl, getSubtitle,isLoggedIn }) => {
   const carouselRef = useRef(null);
 
   const settings = {
@@ -82,7 +82,7 @@ const MusicHotSlider = ({ songs, getImageUrl, getSubtitle }) => {
             {/* ✅ QUAN TRỌNG: Dùng thẻ div bọc ngoài với padding để tạo khoảng cách */}
             <div style={{ padding: `0 ${GAP}px` }}> 
               
-              <Link to={`/track/${item._id}`} style={{ textDecoration: 'none', display: 'block' }}>
+              <Link to={`/track/${item._id}`} style={{ textDecoration: 'none', display: 'block' }} onClick={() => {if(isLoggedIn) handleUpdateHistory(item._id);}}>
                 {/* Bắt buộc Card phải co giãn theo width 100% */}
                 <div style={{ width: '100%', overflow: 'hidden' }}>
                     <Card 

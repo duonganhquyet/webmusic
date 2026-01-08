@@ -106,7 +106,7 @@ const Header = () => {
                             onFocus={() => { if(suggestions.length > 0) setShowDropdown(true) }}
                         />
                         <button type="submit" className="search-btn">
-                            <FaSearch />
+                            <FaSearch/>
                         </button>
                     </form>
 
@@ -142,7 +142,7 @@ const Header = () => {
                             <Link to={`/user/${auth.user._id}`} className="user-avatar">
                                 <img 
                                     src={auth.user.imgUrl && auth.user.imgUrl !== "default_avatar.png" 
-                                        ? `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${auth.user.imgUrl}` 
+                                        ? `${import.meta.env.VITE_BACKEND_URL}/images/${auth.user.imgUrl}` 
                                         : "/default_avatar.png"} 
                                     alt="Ảnh avatar" 
                                     style={{ objectFit: "cover", width:"100%" }}
