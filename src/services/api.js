@@ -1,3 +1,4 @@
+// src/services/api.js
 import axios from "./axios.customize";
 
 /* ========================= HOME / SONGS / COMMENTS ========================= */
@@ -15,7 +16,6 @@ export const fetchCommentById = (id) => {
     return axios.get(urlBackend);
 };
 
-/* ========================= AUTH / USER ========================= */
 export const checkUsername = (username) => {
     const urlBackend = `/api/check-username`;
     return axios.get(urlBackend, { params: { username } });
@@ -182,11 +182,9 @@ export const fetchSongsByUser = async (userId) => {
         return [];
     }
 };
-
 export const uploadSong = async (formData) => {
     const urlBackend = `/api/upload`;
     return axios.post(urlBackend, formData, {
         headers: { "Content-Type": "multipart/form-data" },
     });
 };
-    

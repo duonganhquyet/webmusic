@@ -1,13 +1,15 @@
 import './Signup.css'
-import { Link, redirect } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useNavigate } from "react-router-dom"
 import { checkUsername, registerUser } from '../../services/api'
 import { notifySuccess } from '../../utils/notification'
 
+// ✅ 1. Import hàm thông báo
+import { notifySuccess, notifyError } from '../../utils/notification'
+
 function Signup() {
   const navigate = useNavigate()
-
 
   const [username, setUsername] = useState("")
   const [fullName, setFullName] = useState("")
@@ -32,19 +34,14 @@ function Signup() {
   const checkUsernameAvailability = async () => {
     if (!username) return null
     try {
-      
       const res = await checkUsername(username);
       if(res && res.data){
-        console.log("check res",res );
-        
         setIsUsernameAvailable(!!res.data.exists);
         return !!res.data.exists;
       }
-      
-      
     } catch (err) {
-
-      // don't block registration on check failure, but notify user
+      // ✅ Thông báo nếu lỗi mạng hoặc server khi check username
+      notifyError("Lỗi kết nối", "Không thể kiểm tra tên đăng nhập lúc này.");
       setError("Could not verify username")
       return null
     }
@@ -54,33 +51,40 @@ function Signup() {
     e.preventDefault()
     setError("")
 
+    // ✅ Validate: Mật khẩu không khớp
     if (password !== confirmPassword) {
-      setError("Passwords do not match")
+      const msg = "Mật khẩu xác nhận không khớp.";
+      setError(msg)
+      notifyError("Đăng ký thất bại", msg);
       return
     }
 
     // Check username availability before calling register
     const exists = await checkUsernameAvailability()
+    
+    // ✅ Validate: Username đã tồn tại
     if (exists === true) {
-      setError("Username already exists")
+      const msg = "Tên đăng nhập đã tồn tại.";
+      setError(msg)
+      notifyError("Đăng ký thất bại", msg);
       return
     }
 
     try {
       const res = await registerUser(username, password, fullName);
       if(res && res.data){
-        console.log("check res register",res );
+        console.log("check res register", res);
       }
 
-      // if (!res.ok) {
-      //   throw new Error(data.message || "Register failed")
-      // }
-
-      notifySuccess('Đăng ký', 'Đăng ký thành công!');
+      // ✅ Thay thế Alert bằng NotifySuccess
+      notifySuccess("Đăng ký thành công!", "Tài khoản của bạn đã được tạo. Vui lòng đăng nhập.");
       navigate("/login")
 
     } catch (err) {
-      setError(err.message)
+      // ✅ Thông báo lỗi từ server khi đăng ký
+      const errorMsg = err.message || "Đăng ký thất bại. Vui lòng thử lại.";
+      setError(errorMsg)
+      notifyError("Lỗi hệ thống", errorMsg);
     }
   }
 
@@ -93,6 +97,7 @@ function Signup() {
       <form className="signup-form" onSubmit={handleSubmit}>
         <h1>Sign Up</h1>
         
+         {/* Hiển thị lỗi text dưới tiêu đề nếu cần */}
          {error && <p className="error-text" style={{color: "red", textAlign: 'center'}}>{error}</p>}
 
         <div className="form-group-register">

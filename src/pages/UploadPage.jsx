@@ -2,11 +2,12 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "../assets/UploadPage.css";
 
-// 👇 QUAN TRỌNG: Import component form vừa tạo ở trên
-// Nếu bạn lưu file kia trong thư mục components thì để dòng này:
+// Import component form con
 import TrackInfoForm from "../components/TrackInfoForm";
 import { uploadSong } from "../services/api";
-// Nếu bạn lưu cùng thư mục pages thì đổi thành: import TrackInfoForm from "./TrackInfoForm";
+
+// ✅ 1. Import hệ thống thông báo mới
+import { notifySuccess, notifyError, notifyWarning } from "../utils/notification";
 
 const API_BASE = "http://localhost:8080";
 const MAX_RECORD_SECONDS = 600; 
@@ -21,7 +22,9 @@ function formatTime(seconds) {
 export default function UploadPage() {
   const [isDragging, setDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [message, setMessage] = useState("");
+  
+  // ❌ Đã xóa state message cũ
+  // const [message, setMessage] = useState("");
 
   // STATE GHI ÂM
   const [isRecordPanelOpen, setRecordPanelOpen] = useState(false);
@@ -41,12 +44,14 @@ export default function UploadPage() {
 
   const navigate = useNavigate();
 
-  // --- LOGIC UPLOAD FILE (Đã sửa lỗi lấy ID) ---
+  // --- LOGIC UPLOAD FILE ---
   const uploadFiles = async (files) => {
     try {
       if (files.length === 0) return;
       
-      setMessage("Đang tải lên server...");
+      // Thông báo đang xử lý (tuỳ chọn, hoặc dùng component loading riêng)
+      // notifySuccess("Đang tải lên...", "Vui lòng chờ trong giây lát.");
+
       const formData = new FormData();
       files.forEach((file) => formData.append("files", file));
 
@@ -54,10 +59,9 @@ export default function UploadPage() {
       
       if (res.statusCode !== 201) throw new Error(res.message || "Upload failed");
 
-      setMessage("Tải lên thành công! File đã lưu vào thư mục filemp3.");
+      // ✅ Thay setMessage bằng notifySuccess
+      notifySuccess("Thành công", "Tải lên bài hát hoàn tất!");
 
-      // SỬA LỖI: Tìm đúng vị trí dữ liệu bài hát
-     
       const uploadedSongs = res.data;
       
       // Kiểm tra ID
@@ -66,11 +70,13 @@ export default function UploadPage() {
         setShowTrackInfo(true);
       } else {
         console.warn("Backend trả về dữ liệu thiếu ID:", res.data);
-        setMessage("Upload thành công nhưng không lấy được ID bài hát để sửa thông tin.");
+        // ✅ Thay setMessage bằng notifyWarning
+        notifyWarning("Cảnh báo", "Upload thành công nhưng không lấy được ID để sửa thông tin.");
       }
     } catch (err) {
       console.error(err);
-      setMessage("Lỗi khi tải lên: " + err.message);
+      // ✅ Thay setMessage bằng notifyError
+      notifyError("Lỗi tải lên", err.message || "Có lỗi xảy ra khi tải file.");
     }
   };
 
@@ -109,7 +115,8 @@ export default function UploadPage() {
           if (mediaRecorderRef.current) mediaRecorderRef.current.stop();
           setIsRecording(false);
           setIsPaused(false);
-          setMessage("Đã đạt giới hạn 10 phút, tự động dừng.");
+          // ✅ Thay setMessage
+          notifyWarning("Đã dừng", "Đã đạt giới hạn 10 phút ghi âm.");
           stopTimer();
           return MAX_RECORD_SECONDS;
         }
@@ -128,7 +135,7 @@ export default function UploadPage() {
   const handleStartRecording = async () => {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Trình duyệt không hỗ trợ micro.");
+        notifyError("Lỗi thiết bị", "Trình duyệt không hỗ trợ micro.");
         return;
       }
       clearPreviousRecording();
@@ -156,11 +163,11 @@ export default function UploadPage() {
       mediaRecorder.start();
       setIsRecording(true);
       setIsPaused(false);
-      setMessage("Đang ghi âm...");
+      // notifySuccess("Đang ghi âm", "Micro đang hoạt động..."); // Có thể bỏ nếu thấy phiền
       startTimer(true);
     } catch (err) {
       console.error(err);
-      alert("Không thể truy cập micro: " + err.message);
+      notifyError("Lỗi truy cập micro", err.message);
     }
   };
 
@@ -169,7 +176,7 @@ export default function UploadPage() {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       setIsPaused(false);
-      setMessage("Đã dừng ghi âm.");
+      // setMessage("Đã dừng ghi âm."); -> Có thể không cần thông báo ở đây vì UI đã đổi
       stopTimer();
     }
   };
@@ -179,19 +186,19 @@ export default function UploadPage() {
     if (!isPaused) {
       mediaRecorderRef.current.pause();
       setIsPaused(true);
-      setMessage("Tạm dừng...");
+      // setMessage("Tạm dừng...");
       stopTimer();
     } else {
       mediaRecorderRef.current.resume();
       setIsPaused(false);
-      setMessage("Đang ghi âm...");
+      // setMessage("Đang ghi âm...");
       startTimer(false);
     }
   };
 
   const handleUploadRecording = async () => {
     if (!recordedBlob) {
-      alert("Chưa có file ghi âm.");
+      notifyWarning("Chưa có file", "Vui lòng ghi âm trước khi tải lên.");
       return;
     }
     const file = new File([recordedBlob], `recording-${Date.now()}.webm`, { type: "audio/webm" });
@@ -202,7 +209,7 @@ export default function UploadPage() {
   const handleDeleteRecording = () => {
     clearPreviousRecording();
     setSelectedFiles([]);
-    setMessage("Đã hủy bản ghi.");
+    notifySuccess("Đã hủy", "Bản ghi âm đã được xóa.");
   };
 
   const handleClose = () => navigate("/");
@@ -286,7 +293,7 @@ export default function UploadPage() {
 
         {/* Hiển thị trạng thái */}
         <div className="status-area">
-          {message && <p className="message-text">{message}</p>}
+          {/* Đã xóa hiển thị message text ở đây */}
           {selectedFiles.length > 0 && (
             <div className="file-list">
               {selectedFiles.map((f, i) => <div key={i}>📄 {f.name}</div>)}
@@ -301,7 +308,8 @@ export default function UploadPage() {
             onUpdated={(newSong) => {
               setRecentSong(newSong);
               setShowTrackInfo(false);
-              setMessage("Cập nhật thông tin thành công!");
+              // ✅ Thay message text bằng notifySuccess
+              notifySuccess("Hoàn tất", "Thông tin bài hát đã được cập nhật!");
             }}
           />
         )}
