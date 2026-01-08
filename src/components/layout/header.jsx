@@ -1,15 +1,15 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom"; 
 import { FaSearch } from "react-icons/fa";
-import "./header.css";
+import "./header.css"; // Nhớ import file CSS vừa tạo
 import { useAuthContext } from "../../contexts/auth.context";
 
-const Header = () => {
+// ✅ 1. Import hệ thống thông báo
+import { notifySuccess, notifyWarning, notifyError } from "../../utils/notification";
 
+const Header = () => {
     const { auth, setAuth } = useAuthContext();
-    
     const isLoggedIn = auth.user && auth.user._id ? true : false;
-    console.log("check auth", auth);
     
     // State cho ô tìm kiếm
     const [searchTerm, setSearchTerm] = useState(""); 
@@ -18,16 +18,16 @@ const Header = () => {
     const [suggestions, setSuggestions] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
     
-    // Hook điều hướng & Ref để xử lý click ra ngoài
     const navigate = useNavigate(); 
     const searchRef = useRef(null);
+    const API_BASE = "http://localhost:8080"; // Định nghĩa base URL để dễ quản lý
 
-    // --- 1. XỬ LÝ LIVE SEARCH (Tự động tìm khi gõ) ---
+    // --- 1. XỬ LÝ LIVE SEARCH ---
     useEffect(() => {
         const delayDebounceFn = setTimeout(async () => {
             if (searchTerm.trim().length > 0) { 
                 try {
-                    const res = await fetch(`http://localhost:8080/api/search?q=${encodeURIComponent(searchTerm)}`);
+                    const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(searchTerm)}`);
                     const data = await res.json();
                     const results = data.data || data.songs || (Array.isArray(data) ? data : []);
                     setSuggestions(results.slice(0, 5));
@@ -70,15 +70,28 @@ const Header = () => {
     };
 
     const handleUploadGuest = () => {
-        alert("Vui lòng đăng nhập để thực hiện Upload!");
+        notifyWarning("Yêu cầu quyền truy cập", "Vui lòng đăng nhập để thực hiện Upload!");
     };
     
     const handleLogout = () => {
-        // ✅ Reset hoàn toàn auth context và localStorage
         setAuth({ user: null, token: null });
         localStorage.removeItem("accessToken");
         localStorage.removeItem("user");
         navigate("/");
+        notifySuccess("Đăng xuất thành công", "Hẹn gặp lại bạn!");
+    }
+
+    // Hàm tiện ích lấy ảnh
+    const getImageUrl = (path) => {
+        if (!path) return "/default_avatar.png";
+        if (path.startsWith("http")) return path;
+        // Xử lý dấu gạch chéo
+        return `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+    }
+
+    const getAvatarUrl = (imgUrl) => {
+         if (!imgUrl || imgUrl === "default_avatar.png") return "/default_avatar.png";
+         return `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${imgUrl}`;
     }
 
     return (
@@ -95,21 +108,23 @@ const Header = () => {
                 </div>
 
                 {/* --- CENTER SECTION (SEARCH) --- */}
-                <div className="header-center" ref={searchRef} style={{position: 'relative', zIndex: 1000}}>
+                <div className="header-center" ref={searchRef}>
                     <form className="search-form" onSubmit={handleSearch}>
                         <input 
                             type="text" 
-                            placeholder="Search" 
+                            placeholder="Search for artists, tracks..." 
                             className="search-input"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)} 
                             onFocus={() => { if(suggestions.length > 0) setShowDropdown(true) }}
                         />
+                        {/* Icon tìm kiếm nằm trong form, được CSS absolute sang phải */}
                         <button type="submit" className="search-btn">
-                            <FaSearch/>
+                            <FaSearch />
                         </button>
                     </form>
 
+                    {/* DROPDOWN KẾT QUẢ */}
                     {showDropdown && suggestions.length > 0 && (
                         <div className="search-dropdown">
                             {suggestions.map((song) => (
@@ -119,13 +134,14 @@ const Header = () => {
                                     onClick={() => handleSelectSuggestion(song._id)}
                                 >
                                     <img 
-                                        src={song.imgUrl ? (song.imgUrl.startsWith("http") ? song.imgUrl : `http://localhost:8080${song.imgUrl.startsWith("/") ? "" : "/"}${song.imgUrl}`) : "/default-cover.png"} 
+                                        src={getImageUrl(song.imgUrl)} 
                                         alt="" 
                                         className="search-thumb"
+                                        onError={(e) => {e.target.src = "/default-cover.png"}}
                                     />
                                     <div className="search-info">
                                         <div className="search-title">{song.title}</div>
-                                        <div className="search-artist">{song.description}</div>
+                                        <div className="search-artist">{song.description || song.uploader?.username}</div>
                                     </div>
                                 </div>
                             ))}
@@ -141,11 +157,10 @@ const Header = () => {
                             
                             <Link to={`/user/${auth.user._id}`} className="user-avatar">
                                 <img 
-                                    src={auth.user.imgUrl && auth.user.imgUrl !== "default_avatar.png" 
-                                        ? `${import.meta.env.VITE_BACKEND_URL}/images/${auth.user.imgUrl}` 
-                                        : "/default_avatar.png"} 
-                                    alt="Ảnh avatar" 
-                                    style={{ objectFit: "cover", width:"100%" }}
+                                    src={getAvatarUrl(auth.user.imgUrl)} 
+                                    alt="User Avatar" 
+                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                    onError={(e) => {e.target.src = "/default_avatar.png"}}
                                 />
                             </Link>
 
@@ -155,11 +170,7 @@ const Header = () => {
                         </>
                     ) : (
                         <>
-                            <span 
-                                className="upload-link" 
-                                onClick={handleUploadGuest} 
-                                style={{ cursor: "pointer" }} 
-                            >
+                            <span className="upload-link" onClick={handleUploadGuest}>
                                 Upload
                             </span>
                             

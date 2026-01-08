@@ -6,11 +6,11 @@ import "../assets/UploadPage.css";
 import TrackInfoForm from "../components/TrackInfoForm";
 import { uploadSong } from "../services/api";
 
-// ✅ 1. Import hệ thống thông báo mới
+// ✅ 1. Import hệ thống thông báo
 import { notifySuccess, notifyError, notifyWarning } from "../utils/notification";
 
 const API_BASE = "http://localhost:8080";
-const MAX_RECORD_SECONDS = 600; 
+const MAX_RECORD_SECONDS = 600; // 10 phút
 
 function formatTime(seconds) {
   const s = Math.floor(seconds);
@@ -19,13 +19,24 @@ function formatTime(seconds) {
   return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`;
 }
 
+// ✅ Hàm helper: Lấy thời lượng file âm thanh (trả về Promise)
+const getAudioDuration = (file) => {
+  return new Promise((resolve) => {
+    const audio = new Audio(URL.createObjectURL(file));
+    audio.onloadedmetadata = () => {
+      URL.revokeObjectURL(audio.src); // Dọn dẹp bộ nhớ
+      resolve(audio.duration); // Trả về số giây
+    };
+    audio.onerror = () => {
+      resolve(0); // Nếu lỗi (không phải audio), trả về 0 để xử lý sau
+    };
+  });
+};
+
 export default function UploadPage() {
   const [isDragging, setDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   
-  // ❌ Đã xóa state message cũ
-  // const [message, setMessage] = useState("");
-
   // STATE GHI ÂM
   const [isRecordPanelOpen, setRecordPanelOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -44,38 +55,55 @@ export default function UploadPage() {
 
   const navigate = useNavigate();
 
-  // --- LOGIC UPLOAD FILE ---
+  // --- LOGIC UPLOAD FILE (ĐÃ SỬA) ---
   const uploadFiles = async (files) => {
     try {
       if (files.length === 0) return;
-      
-      // Thông báo đang xử lý (tuỳ chọn, hoặc dùng component loading riêng)
-      // notifySuccess("Đang tải lên...", "Vui lòng chờ trong giây lát.");
 
+      // ✅ BƯỚC 1: Lọc file và kiểm tra thời lượng
+      const validFiles = [];
+      
+      for (const file of files) {
+        // Lấy thời lượng
+        const duration = await getAudioDuration(file);
+        
+        if (duration > MAX_RECORD_SECONDS) {
+          // ❌ Thông báo lỗi nếu quá 10p
+          notifyError(
+            "File quá lớn", 
+            `File "${file.name}" dài ${formatTime(duration)}, vượt quá giới hạn 10 phút.`
+          );
+        } else {
+          // ✅ File hợp lệ
+          validFiles.push(file);
+        }
+      }
+
+      // Nếu không còn file nào hợp lệ thì dừng
+      if (validFiles.length === 0) return;
+
+      // --- Bắt đầu upload các file hợp lệ ---
       const formData = new FormData();
-      files.forEach((file) => formData.append("files", file));
+      validFiles.forEach((file) => formData.append("files", file));
 
       const res = await uploadSong(formData);
       
       if (res.statusCode !== 201) throw new Error(res.message || "Upload failed");
 
-      // ✅ Thay setMessage bằng notifySuccess
-      notifySuccess("Thành công", "Tải lên bài hát hoàn tất!");
+      notifySuccess("Thành công", `Đã tải lên ${validFiles.length} bài hát!`);
 
       const uploadedSongs = res.data;
       
-      // Kiểm tra ID
+      // Kiểm tra ID để hiện form sửa thông tin
       if (uploadedSongs && uploadedSongs.length > 0 && uploadedSongs[0]?._id) {
         setRecentSong(uploadedSongs[0]); 
         setShowTrackInfo(true);
       } else {
         console.warn("Backend trả về dữ liệu thiếu ID:", res.data);
-        // ✅ Thay setMessage bằng notifyWarning
         notifyWarning("Cảnh báo", "Upload thành công nhưng không lấy được ID để sửa thông tin.");
       }
     } catch (err) {
       console.error(err);
-      // ✅ Thay setMessage bằng notifyError
       notifyError("Lỗi tải lên", err.message || "Có lỗi xảy ra khi tải file.");
     }
   };
@@ -92,6 +120,8 @@ export default function UploadPage() {
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     setSelectedFiles(files);
+    // Lưu ý: input file cần reset value để chọn lại file cũ được (nếu muốn)
+    e.target.value = null; 
     uploadFiles(files);
   };
 
@@ -115,7 +145,6 @@ export default function UploadPage() {
           if (mediaRecorderRef.current) mediaRecorderRef.current.stop();
           setIsRecording(false);
           setIsPaused(false);
-          // ✅ Thay setMessage
           notifyWarning("Đã dừng", "Đã đạt giới hạn 10 phút ghi âm.");
           stopTimer();
           return MAX_RECORD_SECONDS;
@@ -163,7 +192,6 @@ export default function UploadPage() {
       mediaRecorder.start();
       setIsRecording(true);
       setIsPaused(false);
-      // notifySuccess("Đang ghi âm", "Micro đang hoạt động..."); // Có thể bỏ nếu thấy phiền
       startTimer(true);
     } catch (err) {
       console.error(err);
@@ -176,7 +204,6 @@ export default function UploadPage() {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       setIsPaused(false);
-      // setMessage("Đã dừng ghi âm."); -> Có thể không cần thông báo ở đây vì UI đã đổi
       stopTimer();
     }
   };
@@ -186,12 +213,10 @@ export default function UploadPage() {
     if (!isPaused) {
       mediaRecorderRef.current.pause();
       setIsPaused(true);
-      // setMessage("Tạm dừng...");
       stopTimer();
     } else {
       mediaRecorderRef.current.resume();
       setIsPaused(false);
-      // setMessage("Đang ghi âm...");
       startTimer(false);
     }
   };
@@ -201,9 +226,13 @@ export default function UploadPage() {
       notifyWarning("Chưa có file", "Vui lòng ghi âm trước khi tải lên.");
       return;
     }
+    // Ghi âm thì hệ thống tự giới hạn ở timer rồi, nên không cần check lại duration ở đây
     const file = new File([recordedBlob], `recording-${Date.now()}.webm`, { type: "audio/webm" });
     setSelectedFiles([file]);
-    await uploadFiles([file]);
+    
+    // Gọi thẳng hàm uploadSong hoặc uploadFiles (nhưng uploadFiles sẽ check lại duration)
+    // Để an toàn ta tạo mảng file và truyền vào uploadFiles
+    await uploadFiles([file]); 
   };
 
   const handleDeleteRecording = () => {
@@ -293,7 +322,6 @@ export default function UploadPage() {
 
         {/* Hiển thị trạng thái */}
         <div className="status-area">
-          {/* Đã xóa hiển thị message text ở đây */}
           {selectedFiles.length > 0 && (
             <div className="file-list">
               {selectedFiles.map((f, i) => <div key={i}>📄 {f.name}</div>)}
@@ -308,7 +336,6 @@ export default function UploadPage() {
             onUpdated={(newSong) => {
               setRecentSong(newSong);
               setShowTrackInfo(false);
-              // ✅ Thay message text bằng notifySuccess
               notifySuccess("Hoàn tất", "Thông tin bài hát đã được cập nhật!");
             }}
           />
