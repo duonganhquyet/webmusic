@@ -4,7 +4,9 @@ import Card from '../components/Card';
 import HistoryTrack from '../components/historyTrack';
 import MusicHotSlider from '../components/MusicHotSlider'; 
 import { fetchHomeData } from '../services/api';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
+import { useAuthContext } from '../contexts/auth.context';
+import { resolveAssetUrl } from '../utils/url';
 
 const API_BASE = "http://localhost:8080";
 
@@ -66,6 +68,8 @@ const Home = () => {
      return "Unknown Artist";
   };
 
+  // ✅ 2. Dùng resolver chung cho ảnh
+//   const getImageUrl = (path) => resolveAssetUrl(path) || "/default-cover.png";
   const getImageUrl = (path) => {
     if (!path) return "/default-cover.png"; 
     if (path.startsWith("http")) return path; 

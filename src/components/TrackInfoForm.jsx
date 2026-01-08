@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useAuthContext } from "../contexts/auth.context"; 
 import "../assets/UploadPage.css"; 
+import { resolveAssetUrl } from "../utils/url";
 
 // ✅ 1. Import hệ thống thông báo
 import { notifySuccess, notifyError } from "../utils/notification";
@@ -44,7 +45,7 @@ function TrackInfoForm({ song, onUpdated }) {
         setDescription(currentDesc);
         setCategory(song.category || "");
         
-        setImgUrl(getFullImgUrl(song.imgUrl));
+        setImgUrl(resolveAssetUrl(song.imgUrl));
         setSelectedFile(null); 
         setError("");
     }

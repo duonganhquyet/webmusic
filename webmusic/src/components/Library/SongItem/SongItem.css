@@ -16,7 +16,6 @@
   width: 58px;
   aspect-ratio: 1 / 1;          /* luôn hình vuông */
   position: relative;
-  overflow: hidden;              /* ẩn phần tràn ra ngoài */
 }
 
 .song-cover {
@@ -69,8 +68,6 @@
 }
 
 .like-btn,
-.copy-btn,
-.add-btn,
 .more-btn {
   background: transparent;
   border: none;
@@ -81,8 +78,6 @@
 }
 
 .like-btn:hover,
-.copy-btn:hover,
-.add-btn:hover,
 .more-btn:hover {
   opacity: 1;
 }

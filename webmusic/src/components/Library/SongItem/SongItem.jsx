@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "./SongItem.css";
 
 export default function SongItem({
@@ -8,16 +8,9 @@ export default function SongItem({
   liked = false,
   onPlay,
   onLike,
-  onCopy,
-  onAddToPlaylist,
   onMore,
 }) {
   const [isLiked, setIsLiked] = useState(liked);
-
-  // Keep internal state in sync with parent-provided liked prop
-  useEffect(() => {
-    setIsLiked(liked);
-  }, [liked]);
 
   function toggleLike(e) {
     e.stopPropagation();
@@ -43,28 +36,6 @@ export default function SongItem({
       <div className="song-actions">
         <button className="like-btn" onClick={toggleLike}>
           {isLiked ? "❤️" : "🤍"}
-        </button>
-
-        <button
-          className="copy-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onCopy) onCopy();
-          }}
-          title="Copy link"
-        >
-          🔗
-        </button>
-
-        <button
-          className="add-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddToPlaylist && onAddToPlaylist();
-          }}
-          title="Add to playlist"
-        >
-          ➕
         </button>
 
         <button

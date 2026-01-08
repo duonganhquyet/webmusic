@@ -12,6 +12,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/auth.context';
 import { fetchHomeData } from '../services/api'; 
+import { resolveAssetUrl, resolveAvatarUrl } from '../utils/url';
 
 // ✅ 1. Import hệ thống thông báo mới
 import { notifySuccess, notifyError } from '../utils/notification';
@@ -276,7 +277,7 @@ const AdminPage = () => {
   ];
 
   const userColumns = [
-    { title: 'Avatar', dataIndex: 'imgUrl', render: (u) => <Avatar src={getImageUrl(u)} /> },
+    { title: 'Avatar', dataIndex: 'imgUrl', render: (u) => <Avatar src={resolveAvatarUrl(u) || "/default_avatar.png"} /> },
     { title: 'Username', dataIndex: 'username', render: t => <b>{t}</b> },
     { title: 'Tên hiển thị', dataIndex: 'name' },
     { title: 'Vai trò', dataIndex: 'role', render: r => <Tag color={r === 'admin' ? 'red' : 'green'}>{r ? r.toUpperCase() : 'USER'}</Tag> },

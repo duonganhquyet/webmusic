@@ -2,6 +2,7 @@ import './Login.css'
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { loginUser } from '../../services/api'
+import { notifySuccess } from '../../utils/notification'
 import { useAuthContext } from '../../contexts/auth.context'
 
 // ✅ 1. Import hàm thông báo
