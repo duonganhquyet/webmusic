@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 // Import file CSS (đảm bảo bạn đã tạo file này như hướng dẫn trước)
 import "../assets/UploadPage.css"; 
+import { resolveAssetUrl } from "../utils/url";
 
 const API_BASE = "http://localhost:8080";
 
@@ -26,12 +27,7 @@ function TrackInfoForm({ song, onUpdated }) {
   
   const coverInputRef = useRef(null);
 
-  // Helper: Tạo link ảnh
-  const getFullImgUrl = (path) => {
-      if (!path) return null;
-      if (path.startsWith("http")) return path;
-      return `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
-  };
+  // Helper: Use shared resolver for previewing stored cover
 
   // ✅ KHI SONG THAY ĐỔI -> RESET FORM
   useEffect(() => {
@@ -40,7 +36,7 @@ function TrackInfoForm({ song, onUpdated }) {
         setDescription(song.description || "");
         setCategory(song.category || ""); 
         
-        setImgUrl(getFullImgUrl(song.imgUrl));
+        setImgUrl(resolveAssetUrl(song.imgUrl));
         setSelectedFile(null); 
         setError("");
     }

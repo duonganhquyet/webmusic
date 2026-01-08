@@ -12,6 +12,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/auth.context';
 import { fetchHomeData } from '../services/api'; 
+import { resolveAssetUrl, resolveAvatarUrl } from '../utils/url';
 
 const { Sider, Content } = Layout;
 const { Option } = Select;
@@ -47,12 +48,8 @@ const AdminPage = () => {
   // ✅ Hàm lấy Token từ LocalStorage
   const getToken = () => localStorage.getItem("accessToken");
 
-  // Hàm xử lý link ảnh
-  const getImageUrl = (path) => {
-    if (!path) return "";
-    if (path.startsWith("http")) return path;
-    return `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
-  };
+    // Dùng resolver chung cho ảnh
+    const getImageUrl = (path) => resolveAssetUrl(path) || "";
 
   // CHECK QUYỀN
   useEffect(() => {
@@ -252,7 +249,7 @@ const AdminPage = () => {
   ];
 
   const userColumns = [
-    { title: 'Avatar', dataIndex: 'imgUrl', render: (u) => <Avatar src={getImageUrl(u)} /> },
+    { title: 'Avatar', dataIndex: 'imgUrl', render: (u) => <Avatar src={resolveAvatarUrl(u) || "/default_avatar.png"} /> },
     { title: 'Username', dataIndex: 'username', render: t => <b>{t}</b> },
     { title: 'Name', dataIndex: 'name' },
     { title: 'Role', dataIndex: 'role', render: r => <Tag color={r === 'admin' ? 'red' : 'green'}>{r ? r.toUpperCase() : 'USER'}</Tag> },

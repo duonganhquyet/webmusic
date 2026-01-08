@@ -6,6 +6,7 @@ import HistoryTrack from '../components/historyTrack';
 import { fetchHomeData } from '../services/api';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuthContext } from '../contexts/auth.context';
+import { resolveAssetUrl } from '../utils/url';
 
 // ✅ 1. Khai báo địa chỉ Server Backend
 const API_BASE = "http://localhost:8080";
@@ -94,13 +95,8 @@ const Home = () => {
      return item.description || "Unknown Artist";
   };
 
-  // ✅ 2. Hàm xử lý đường dẫn ảnh (QUAN TRỌNG)
-  const getImageUrl = (path) => {
-    if (!path) return "/default-cover.png"; // Ảnh mặc định nếu không có
-    if (path.startsWith("http")) return path; // Nếu là link online
-    // Nối chuỗi localhost:8080 vào trước đường dẫn tương đối
-    return `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
-  };
+  // ✅ 2. Dùng resolver chung cho ảnh
+  const getImageUrl = (path) => resolveAssetUrl(path) || "/default-cover.png";
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#121216', color: 'white', paddingTop: '20px', paddingBottom: '40px' }}>

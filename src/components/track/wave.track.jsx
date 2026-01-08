@@ -155,7 +155,7 @@ const WaveTrack = (props) => {
                                 key={v._id} style={{width:"20px",height:"20px",position:"absolute",bottom:"14px",zIndex:20,
                                     left: calLeft(v.moment)
                                 }}
-                                src={"../public/default-avatar.png"} alt="" />
+                                src={"/default-avatar.png"} alt="" />
                                 </div>
                             ))
                         }

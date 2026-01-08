@@ -2,6 +2,7 @@ import './Login.css'
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { loginUser } from '../../services/api'
+import { notifySuccess } from '../../utils/notification'
 import { useAuthContext } from '../../contexts/auth.context'
 
 function Login() {
@@ -32,7 +33,7 @@ function Login() {
           user: res.data.user
         })
 
-        alert("Đăng nhập thành công!");
+        notifySuccess('Đăng nhập', 'Đăng nhập thành công!');
 
         // === SỬA Ở ĐÂY: Kiểm tra quyền Admin ===
         // Giả sử server trả về field "role" trong object user

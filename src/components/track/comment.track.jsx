@@ -64,7 +64,7 @@ const CommentTrack = (props) => {
           <Col xs={24} lg={6} xl={4}>
             <div style={{display: "flex",alignContent: "center",flexDirection: "column"}}>
               <img
-                src={"../../public/default-avatar.png"}
+                src={"/default-avatar.png"}
                 alt=""
                 width={150}
                 height={150}
@@ -91,7 +91,7 @@ const CommentTrack = (props) => {
                 >
                   <Space align="start" size={12}>
                     <Avatar
-                      src={"../../public/default-avatar.png"}
+                      src={"/default-avatar.png"}
                       size={40}
                     />
                     <div>

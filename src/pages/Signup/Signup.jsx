@@ -3,6 +3,7 @@ import { Link, redirect } from 'react-router-dom'
 import { useState } from 'react'
 import { useNavigate } from "react-router-dom"
 import { checkUsername, registerUser } from '../../services/api'
+import { notifySuccess } from '../../utils/notification'
 
 function Signup() {
   const navigate = useNavigate()
@@ -75,7 +76,7 @@ function Signup() {
       //   throw new Error(data.message || "Register failed")
       // }
 
-      alert("Đăng ký thành công!");
+      notifySuccess('Đăng ký', 'Đăng ký thành công!');
       navigate("/login")
 
     } catch (err) {

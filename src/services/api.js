@@ -86,6 +86,25 @@ export const fetchPlaylistTracks = (playlistID) => {
     return axios.get(urlBackend);
 }
 
+export const addTrackToPlaylist = (playlistID, trackID) => {
+    // Backend should handle pushing the track into playlist.tracks
+    return axios.post(`/api/library/playlists/${playlistID}/tracks`, { trackId: trackID });
+}
+
+export const uploadPlaylistCover = (playlistID, formData) => {
+    return axios.post(`/api/library/playlists/${playlistID}/cover`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+}
+
+export const updatePlaylistInfo = (playlistID, data) => {
+    return axios.put(`/api/library/playlists/${playlistID}`, data);
+}
+
+export const deletePlaylist = (playlistID) => {
+    return axios.delete(`/api/library/playlists/${playlistID}`);
+}
+
 export const fetchFollowingArtists = () => {
     const urlBackend = `/api/follow/following`;
     return axios.get(urlBackend);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 // Đã xóa import WaveSurfer vì không dùng player ở trang này nữa
 import "../assets/SearchPage.css"; 
+import { resolveAssetUrl } from "../utils/url";
 
 const API_BASE = "http://localhost:8080";
 
@@ -113,17 +114,12 @@ export default function SearchPage() {
 
 // Sửa lại Component TrackCard để nhận sự kiện onClick toàn thẻ
 function TrackCard({ track, onClick }) {
-  const getCoverUrl = (path) => {
-      if (!path) return "/default-cover.png";
-      if (path.startsWith("http")) return path;
-      return `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
-  };
 
   return (
     // Thêm onClick vào div bao ngoài để bấm vào đâu cũng chuyển trang
     <div className="track-card" onClick={onClick} style={{cursor: 'pointer'}}>
-      <div className="track-img-wrapper">
-          <img src={getCoverUrl(track.imgUrl)} className="track-cover" alt={track.title} />
+        <div className="track-img-wrapper">
+          <img src={resolveAssetUrl(track.imgUrl) || "/default-cover.png"} className="track-cover" alt={track.title} />
           {/* Nút Play giờ chỉ mang tính biểu tượng, bấm vào cũng kích hoạt onClick của cha */}
           <div className="overlay">
             <button className="card-play-btn">▶</button>
