@@ -68,7 +68,7 @@ const HistoryTrack = () => {
       setIsLoggedIn(false);
       setLoading(false);
     }
-  }, [auth, token]); // Thêm token vào dependency
+  }, [auth]); // Thêm token vào dependency
 
   return (
     <div style={{ width: '100%', paddingLeft: '20px', borderLeft: '1px solid #333' }}>

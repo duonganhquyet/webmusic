@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Layout, Menu, Table, Card, Row, Col, Statistic, 
-  Button, Avatar, Tag, Popconfirm, message, Space, 
+  Button, Avatar, Tag, Popconfirm, Space, 
   Modal, Form, Input, Select, Upload 
-} from 'antd';
+} from 'antd'; // Bỏ message khỏi đây vì đã thay bằng notify
 import { 
   DashboardOutlined, SoundOutlined, UserOutlined, 
   DeleteOutlined, EditOutlined, PlusOutlined, 
@@ -12,6 +12,9 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '../contexts/auth.context';
 import { fetchHomeData } from '../services/api'; 
+
+// ✅ 1. Import hệ thống thông báo mới
+import { notifySuccess, notifyError } from '../utils/notification';
 
 const { Sider, Content } = Layout;
 const { Option } = Select;
@@ -56,7 +59,8 @@ const AdminPage = () => {
 
   useEffect(() => {
     if (auth.user && auth.user.role !== 'admin') {
-      message.error('Bạn không có quyền truy cập trang quản trị!');
+      // ✅ Thay message.error
+      notifyError("Truy cập bị từ chối", "Bạn không có quyền truy cập trang quản trị!");
       navigate('/'); 
     } else if (auth.user && auth.user.role === 'admin') {
       loadData();
@@ -155,7 +159,8 @@ const AdminPage = () => {
                       body: formDataCover
                   });
               }
-              message.success("Thêm bài hát thành công!");
+              // ✅ Thay message.success
+              notifySuccess("Thành công", "Đã thêm bài hát mới vào hệ thống!");
           } else {
               // EDIT SONG
               await fetch(`${API_BASE}/api/songs/${editingItem._id}`, {
@@ -176,7 +181,8 @@ const AdminPage = () => {
                       body: formDataCover
                   });
               }
-              message.success("Cập nhật bài hát thành công!");
+              // ✅ Thay message.success
+              notifySuccess("Đã lưu", "Cập nhật bài hát thành công!");
           }
       } 
       // --- XỬ LÝ USER ---
@@ -199,7 +205,9 @@ const AdminPage = () => {
           });
 
           if (!res.ok) throw new Error("Lỗi xử lý user");
-          message.success(actionType === 'ADD' ? "Thêm user thành công!" : "Cập nhật user thành công!");
+          // ✅ Thay message.success
+          const msg = actionType === 'ADD' ? "Thêm user thành công!" : "Cập nhật user thành công!";
+          notifySuccess("Thành công", msg);
       }
 
       setIsModalOpen(false);
@@ -207,7 +215,8 @@ const AdminPage = () => {
 
     } catch (error) {
       console.error(error);
-      message.error(error.message || "Có lỗi xảy ra");
+      // ✅ Thay message.error
+      notifyError("Lỗi hệ thống", error.message || "Có lỗi xảy ra, vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -221,13 +230,14 @@ const AdminPage = () => {
           headers: { "Authorization": `Bearer ${getToken()}` }
       });
       if(res.ok) {
-          message.success('Đã xóa thành công!');
+          // ✅ Thay message.success
+          notifySuccess("Đã xóa", "Dữ liệu đã được xóa khỏi hệ thống.");
           loadData();
       } else {
-          message.error("Xóa thất bại");
+          notifyError("Xóa thất bại", "Không thể xóa mục này.");
       }
     } catch (error) {
-      message.error("Lỗi kết nối");
+      notifyError("Lỗi kết nối", "Vui lòng kiểm tra lại mạng.");
     }
   };
 
@@ -235,6 +245,7 @@ const AdminPage = () => {
       setAuth({ user: {} });
       localStorage.removeItem("accessToken");
       navigate("/");
+      notifySuccess("Đã đăng xuất", "Hẹn gặp lại bạn!");
   }
 
   // --- CẤU HÌNH CỘT BẢNG ---
@@ -242,7 +253,7 @@ const AdminPage = () => {
     { title: 'Ảnh bìa', dataIndex: 'imgUrl', render: (u) => <Avatar shape="square" size={50} src={getImageUrl(u)} /> },
     { title: 'Tên bài hát', dataIndex: 'title', width: '25%' },
     
-    // ✅ THAY ĐỔI: Hiển thị trường description là Ca sĩ
+    // Hiển thị trường description là Ca sĩ
     { 
       title: 'Ca sĩ', 
       dataIndex: 'description', 
@@ -383,7 +394,6 @@ const AdminPage = () => {
                 <Input style={inputStyle} />
               </Form.Item>
               
-              {/* ✅ THAY ĐỔI: Label "Tên Ca sĩ" và map vào field "description" */}
               <Form.Item name="description" label="Tên Ca sĩ" rules={[{ required: true, message: 'Nhập tên ca sĩ' }]}>
                 <Input style={inputStyle} placeholder="Ví dụ: Dương Domic" />
               </Form.Item>

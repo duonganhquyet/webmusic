@@ -215,40 +215,58 @@
   border-bottom: 1px solid #222;
 }
 
-/* TRACK INFO PANEL */
+
+/* TRACK INFO PANEL - KHUNG CHỨA FORM CHỈNH SỬA */
 .trackinfo-wrapper {
   margin-top: 32px;
+  background-color: #141414; /* Nền xám tối (đậm hơn chút cho ngầu) */
+  border: 1px solid #333;    /* Viền mờ ngăn cách với nền web */
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3); /* Đổ bóng nhẹ cho nổi */
 }
 
 .trackinfo-title {
   font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 16px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #fff;
+  border-bottom: 1px solid #333;
+  padding-bottom: 12px;
 }
 
 .trackinfo-container {
   display: flex;
   gap: 28px;
+  align-items: flex-start;
 }
 
-/* Artwork box */
+/* ARTWORK BOX - KHUNG ẢNH BÌA */
 .artwork-box {
-  flex: 0 0 260px;
-  height: 260px;
-  border: 1px dashed #444;
+  flex: 0 0 240px;
+  height: 240px;
+  border: 2px dashed #555; /* Viền nét đứt sáng hơn xíu cho dễ thấy */
   border-radius: 8px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #111;
+  background: #0a0a0a; /* Nền đen sâu bên trong khung ảnh */
   position: relative;
   overflow: hidden;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.artwork-box:hover {
+  border-color: #f97316; /* Hover màu cam */
+  background-color: #000;
 }
 
 .artwork-placeholder {
   text-align: center;
-  color: #ccc;
+  color: #888;
+  font-size: 14px;
 }
 
 .artwork-img {
@@ -257,100 +275,72 @@
   object-fit: cover;
 }
 
-.artwork-uploading {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-}
-
-/* Form track info */
+/* FORM NHẬP LIỆU */
 .trackinfo-form {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-
-.form-group.two-cols {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 8px;
 }
 
 .form-group label {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ccc; /* Màu chữ nhãn xám sáng */
 }
 
+/* 👇 QUAN TRỌNG: STYLE CHO INPUT VÀ SELECT (CATEGORY) */
 .form-group input,
 .form-group textarea,
 .form-group select {
-  background: #111;
-  border: 1px solid #333;
+  background-color: #0a0a0a !important; /* Bắt buộc nền đen */
+  color: #ffffff !important;            /* Bắt buộc chữ trắng */
+  border: 1px solid #444;
   border-radius: 4px;
-  padding: 8px 10px;
-  color: #fff;
+  padding: 12px;
   font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
 }
 
-.form-group textarea {
-  resize: vertical;
+/* Khi bấm vào ô nhập thì viền sáng lên */
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #f97316; 
 }
 
-.error-text {
-  color: #f97373;
-  font-size: 13px;
+/* Fix lỗi dropdown khi xổ xuống bị trắng */
+.form-group select option {
+  background-color: #1a1a1a;
+  color: #fff;
+  padding: 10px;
 }
 
 .save-btn {
   background: #f97316;
-  color: #000;
-  margin-top: 6px;
-}
-
-/* INLINE ADD NEW ARTIST / GENRE */
-.inline-add {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.inline-add input {
-  flex: 1;
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid #333;
-  background: #111;
   color: #fff;
-  font-size: 13px;
-}
-
-.btn-inline {
-  padding: 5px 10px;
-  border-radius: 999px;
+  font-weight: bold;
+  padding: 12px 24px;
+  margin-top: 10px;
   border: none;
-  font-size: 12px;
-  font-weight: 600;
+  border-radius: 4px;
   cursor: pointer;
+  align-self: flex-start;
+  transition: background 0.2s;
 }
 
-.btn-inline.save {
-  background: #22c55e;
-  color: #000;
+.save-btn:hover {
+  background: #ea580c;
 }
 
-.btn-inline.cancel {
-  background: #4b5563;
-  color: #fff;
+.error-text {
+  color: #ef4444;
+  font-size: 13px;
 }

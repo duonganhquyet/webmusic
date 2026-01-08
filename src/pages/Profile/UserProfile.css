@@ -2,7 +2,9 @@
   background: #121212;
   color: #fff;
   min-height: 100vh;
+  padding-bottom: 100px; /* tạo khoảng trống cho footer */
 }
+
 
 /* ===== BANNER ===== */
 .profile-banner {
@@ -316,3 +318,61 @@
   white-space: nowrap;
   float: left;
 }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+.follow-btn {
+  margin-left: auto;
+  background: #ff5500;
+  color: #fff;
+  border: none;
+  padding: 8px 22px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.follow-btn.following {
+  background: #333;
+}
+
+
+.track-title-wrapper {
+  width: 50%;
+  overflow: hidden;
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.track-title {
+  display: inline-block;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 16px;
+  color: #fff;
+  transition: transform 0.3s ease;
+  max-width: 100%;
+}
+
+.track-title.marquee:hover {
+  animation: marquee 8s linear infinite alternate;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(-100% + 50%)); }
+}
+
+.track-artist-line {
+  color: #aaa;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+

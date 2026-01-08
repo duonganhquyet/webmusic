@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from "react-router-dom"; 
+import { Outlet, useLocation, useNavigate } from "react-router-dom"; 
 import Header from "./components/layout/header";
 import AppFooter from "./components/footer/app.footer";
 import NotificationInit from './components/NotificationInit'; // Import component thông báo
@@ -10,14 +10,25 @@ import { useAuthContext } from "./contexts/auth.context";
 const App = () => {
   const { auth, setAuth } = useAuthContext();
   const location = useLocation();
+  const nav = useNavigate();
   
   useEffect(() => {
     const checkAuthOnLoad = async () => {
       const infoUser = await checkSession();
       if(infoUser && infoUser.data){
         setAuth({
-          user : infoUser.data.user
+          user : infoUser?.data?.user
         })
+      }
+      else{
+        // Chỉ redirect nếu không phải trang profile người khác
+        // Profile route: /user/:id
+        const isProfileRoute = location.pathname.startsWith("/user/");
+        
+        if(!isProfileRoute){
+          nav("/") // redirect các trang private khác
+        }
+        // Nếu là profile người khác, không redirect, vẫn cho truy cập
       }
     }
     checkAuthOnLoad();
@@ -25,6 +36,7 @@ const App = () => {
 
   
   // 1. Kiểm tra xem đường dẫn có phải trang Admin không
+  const isHomeRoute = location.pathname === '/';
   const isAdminRoute = location.pathname.startsWith('/admin');
 
   // 2. Kiểm tra xem có phải trang đăng nhập/đăng ký không (Lấy từ đoạn conflict giữa)
@@ -48,7 +60,7 @@ const App = () => {
       {!shouldHideHeaderFooter && <div style={{marginBottom:46}}></div> }
 
       <Outlet />
-      {!shouldHideHeaderFooter && <div style={{marginTop:50}}></div> }
+      {!isHomeRoute && !shouldHideHeaderFooter && <div style={{marginTop:46}}></div> }
 
       {/* 3. Tương tự với Footer */}
       {!shouldHideHeaderFooter && <AppFooter/>}

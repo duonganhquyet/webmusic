@@ -1,13 +1,22 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useAuthContext } from "../contexts/auth.context";
+import { useAuthContext } from "../contexts/auth.context"; 
+import "../assets/UploadPage.css"; 
+
+// ✅ 1. Import hệ thống thông báo
+import { notifySuccess, notifyError } from "../utils/notification";
 
 const API_BASE = "http://localhost:8080";
+
+const GENRES = [
+  "Pop", "Ballad", "Rap/Hip-hop", "R&B", "EDM", 
+  "Indie", "Rock", "Bolero", "Lofi", "Remix", "Khác"
+];
 
 function TrackInfoForm({ song, onUpdated }) {
   const { auth } = useAuthContext();
 
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState(""); // Đây là biến lưu tên Tác giả
+  const [description, setDescription] = useState(""); 
   const [category, setCategory] = useState("");
   
   const [imgUrl, setImgUrl] = useState(null);
@@ -23,24 +32,18 @@ function TrackInfoForm({ song, onUpdated }) {
       return `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
   };
 
-  // ✅ LOGIC KHỞI TẠO DỮ LIỆU
   useEffect(() => {
     if (song) {
         setTitle(song.title || "");
 
-        // --- XỬ LÝ TÊN TÁC GIẢ MẶC ĐỊNH ---
         let currentDesc = song.description;
-
-        // Nếu DB chưa có gì hoặc đang là "Unknown Artist" -> Lấy tên User
         if (!currentDesc || currentDesc === "Unknown Artist") {
-             // Ưu tiên lấy Name, nếu không có thì lấy Username
              currentDesc = auth?.user?.name || auth?.user?.username || "";
         }
         
         setDescription(currentDesc);
-        // -----------------------------------
-
         setCategory(song.category || "");
+        
         setImgUrl(getFullImgUrl(song.imgUrl));
         setSelectedFile(null); 
         setError("");
@@ -60,30 +63,44 @@ function TrackInfoForm({ song, onUpdated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!song || !song._id) return setError("Lỗi ID bài hát.");
+    if (!song || !song._id) {
+        const msg = "Lỗi ID bài hát.";
+        setError(msg);
+        notifyError("Lỗi", msg);
+        return;
+    }
 
     try {
       setSaving(true);
       setError("");
 
-      // 1. Cập nhật Text
+      // --- 1. CẬP NHẬT THÔNG TIN VĂN BẢN (TEXT) ---
       const resText = await fetch(`${API_BASE}/api/songs/${song._id}`, {
           method: "PUT",
           headers: { 
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("accessToken")}` // Thêm token cho chắc
+            "Authorization": `Bearer ${localStorage.getItem("accessToken")}` 
           },
           body: JSON.stringify({ title, description, category }),
       });
-      const dataText = await resText.json();
-      if (!resText.ok) throw new Error(dataText.message || "Lỗi cập nhật");
+      
+      const textResponse = await resText.text();
+      let dataText;
+      try {
+          dataText = JSON.parse(textResponse);
+      } catch (e) {
+          throw new Error("Server trả về lỗi (có thể sai đường dẫn): " + textResponse.substring(0, 100));
+      }
 
-      let finalSong = dataText.song || dataText.data || dataText;
+      if (!resText.ok) throw new Error(dataText.message || "Lỗi cập nhật thông tin");
 
-      // 2. Cập nhật Ảnh
+      let finalSongData = dataText.song || dataText.data || dataText;
+
+      // --- 2. UPLOAD ẢNH BÌA (NẾU CÓ CHỌN ẢNH MỚI) ---
       if (selectedFile) {
           const formData = new FormData();
-          formData.append("cover", selectedFile);
+          formData.append("cover", selectedFile); 
+
           const resImg = await fetch(`${API_BASE}/api/songs/${song._id}/cover`, {
               method: "POST",
               headers: { 
@@ -91,18 +108,25 @@ function TrackInfoForm({ song, onUpdated }) {
               },
               body: formData
           });
+          
           const dataImg = await resImg.json();
           if (!resImg.ok) throw new Error(dataImg.message || "Lỗi upload ảnh");
-          finalSong = dataImg.song || dataImg.data || dataImg;
+
+          finalSongData = dataImg.song || dataImg.data || dataImg;
       }
 
+      // Hoàn tất
       setSelectedFile(null);
-      onUpdated && onUpdated(finalSong);
-      alert("Lưu thành công!");
+      onUpdated && onUpdated(finalSongData);
+      
+      // ✅ Thay alert bằng notifySuccess
+      notifySuccess("Thành công", "Đã lưu thay đổi thông tin bài hát!");
 
     } catch (err) {
       console.error(err);
       setError(err.message);
+      // ✅ Thêm notifyError để báo lỗi rõ ràng
+      notifyError("Lỗi cập nhật", err.message || "Có lỗi xảy ra khi lưu thông tin.");
     } finally {
       setSaving(false);
     }
@@ -110,7 +134,7 @@ function TrackInfoForm({ song, onUpdated }) {
 
   return (
     <div className="trackinfo-wrapper">
-      <h2 className="trackinfo-title">Chỉnh sửa thông tin</h2>
+      <h3 className="trackinfo-title">Chỉnh sửa thông tin</h3>
       <div className="trackinfo-container">
         
         {/* Phần Ảnh Bìa */}
@@ -118,21 +142,30 @@ function TrackInfoForm({ song, onUpdated }) {
           {imgUrl ? (
             <img src={imgUrl} alt="Cover" className="artwork-img" />
           ) : (
-            <div className="artwork-placeholder"><span>📷</span><p>Ảnh bìa</p></div>
+            <div className="artwork-placeholder">
+              <span style={{ fontSize: "30px", display: "block", marginBottom: "5px" }}>📷</span>
+              <span>Thêm ảnh bìa</span>
+            </div>
           )}
+          
           <input type="file" accept="image/*" hidden ref={coverInputRef} onChange={handleCoverChange} />
-          {selectedFile && !saving && <div className="artwork-uploading" style={{background:'#28a745'}}>Chờ lưu...</div>}
+          
+          {selectedFile && !saving && (
+             <div className="artwork-uploading" style={{background: '#28a745'}}>Đã chọn ảnh</div>
+          )}
           {saving && <div className="artwork-uploading">Đang lưu...</div>}
         </div>
 
-        {/* Phần Form */}
+        {/* Phần Form Nhập liệu */}
         <form className="trackinfo-form" onSubmit={handleSubmit}>
+          
           <div className="form-group">
-            <label>Tên bài hát *</label>
+            <label>Tên bài hát (Title) *</label>
             <input 
               type="text" required 
               value={title} 
               onChange={(e) => setTitle(e.target.value)} 
+              placeholder="Nhập tên bài hát..."
             />
           </div>
 
@@ -141,23 +174,28 @@ function TrackInfoForm({ song, onUpdated }) {
             <input
               type="text"
               value={description}
-              onChange={(e) => setDescription(e.target.value)} // Vẫn cho phép sửa thoải mái
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="Nhập tên nghệ sĩ..."
             />
           </div>
 
           <div className="form-group">
-            <label>Thể loại</label>
-            <input 
-              type="text" 
-              value={category} 
-              onChange={(e) => setCategory(e.target.value)} 
-            />
+            <label>Thể loại (Category)</label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
+              <option value="" disabled>-- Chọn thể loại --</option>
+              {GENRES.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
           </div>
 
-          {error && <p style={{color:'red', marginTop:10}}>{error}</p>}
-          <button type="submit" className="btn save-btn" disabled={saving}>
-            {saving ? "Đang xử lý..." : "Lưu thay đổi"}
+          {error && <p className="error-text" style={{color:'red', marginTop:10}}>{error}</p>}
+          
+          <button type="submit" className="save-btn" disabled={saving}>
+            {saving ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
         </form>
       </div>
