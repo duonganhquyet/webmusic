@@ -21,7 +21,7 @@ const FollowButton = ({ targetUserId, onStatsChange }) => {
     const fetchStatus = async () => {
       try {
         const res = await axios.get(`/api/follow/status/${targetUserId}`);
-        setIsFollowing(res?.isFollowing || false);
+        setIsFollowing(res?.data?.isFollowing || false);
       } catch (err) {
         console.error("check follow error:", err);
       } finally {
@@ -40,7 +40,7 @@ const FollowButton = ({ targetUserId, onStatsChange }) => {
     }
 
     try {
-      const res = await axios.post("/api/follow", { followingId: targetUserId });
+      const res = await axios.post(`/api/follow/${targetUserId}`);
 
       // Lấy trạng thái mới và followers count từ backend
       const { isFollowing: newStatus, targetUserFollowersCount } = res?.data || {};

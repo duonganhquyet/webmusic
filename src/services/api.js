@@ -117,7 +117,7 @@ export const fetchFollowers = (userId, isPublic = false) => {
 export const fetchFollowing = (userId, isPublic = false) => {
     const urlBackend = isPublic 
         ? `/api/follow/public/following/${userId}` 
-        : `/api/follow/following`;
+        : `/api/follow/following/${userId}`;
     return axios.get(urlBackend);
 };
 

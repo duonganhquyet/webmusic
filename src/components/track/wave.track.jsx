@@ -11,6 +11,7 @@ import CommentTrack from "./comment.track";
 const WaveTrack = (props) => {
     const {track,comments,isLiked,setIsLiked} = props;
     const { auth } = useAuthContext();
+    const isOwner = auth?.user?._id === track?.uploader?._id;
     
     const [isPlaying,setIsPlaying] = useState(false);
 
@@ -152,7 +153,7 @@ const WaveTrack = (props) => {
                         <div className="duration" >{duration}</div>
                         <div ref={hoverRef} className="hover-wave" id="hover"></div>
                     </div>
-                    <div className="info-track">
+                    <div className="info-track" style={{ width: "65%" }}>
                         <div className="info-track_btn" style={{cursor: "pointer"}} onClick={()=>{
                             onPlayPause();
                             if(track && wavesurfer)
@@ -172,11 +173,13 @@ const WaveTrack = (props) => {
                          {/* Sử dụng marginLeft: auto để đẩy về cuối flex container (nếu container không dùng justifyContent space-between)
                              Hoặc nếu muốn nằm cuối "metadata" thì đặt ở đây. 
                              Dựa vào yêu cầu "Đối ngược với nút play", ta sẽ đẩy nó ra xa nút Play nhất có thể trong container này. */}
+                         {!isOwner && (
                          <div 
                             title={isLiked ? "Bỏ thích" : "Thích bài hát"}
                             style={{ 
                                 cursor: "pointer", 
-                                marginLeft: '550px', // Tạo khoảng cách với Title/Author
+                                marginLeft: 'auto', // Tạo khoảng cách với Title/Author
+                                paddingRight: 20,
                                 display: "flex", 
                                 alignItems: "center" 
                             }} 
@@ -184,6 +187,7 @@ const WaveTrack = (props) => {
                         >
                             {isLiked ? <HeartFilled style={{fontSize:30,color: "#ff6000"}}/> : <HeartOutlined style={{fontSize:30,color: "#fff"}}/>}
                         </div>
+                        )}
 
                     </div>
                     <div className="img-wrap">
