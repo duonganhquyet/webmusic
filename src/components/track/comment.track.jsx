@@ -111,7 +111,7 @@ const CommentTrack = (props) => {
               <Link to={`/user/${track?.uploader?._id}`}>
                 <img
                   src={(track?.uploader?.imgUrl && track?.uploader?.imgUrl !== "default_avatar.png") 
-                                      ? `${import.meta.env.VITE_BACKEND_URL}/images/${track?.uploader?.imgUrl}` 
+                                      ? `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${track?.uploader?.imgUrl}` 
                                       : "../../../public/default_avatar.png"}
                   alt="Lỗi tải ảnh"
                   width={150}
