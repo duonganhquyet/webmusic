@@ -309,15 +309,6 @@
   color: #fff;
 }
 
-.track-title {
-  color: #fff;
-  font-weight: 600;
-  font-size: 16px; /* nếu muốn chỉnh to hơn */
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-  float: left;
-}
 
 html, body {
   margin: 0;
@@ -341,28 +332,6 @@ html, body {
 }
 
 
-.track-title-wrapper {
-  width: 50%;
-  overflow: hidden;
-  position: relative;
-  display: inline-block;
-  vertical-align: middle;
-}
-
-.track-title {
-  display: inline-block;
-  white-space: nowrap;
-  font-weight: 600;
-  font-size: 16px;
-  color: #fff;
-  transition: transform 0.3s ease;
-  max-width: 100%;
-}
-
-.track-title.marquee:hover {
-  animation: marquee 8s linear infinite alternate;
-}
-
 @keyframes marquee {
   0% { transform: translateX(0); }
   100% { transform: translateX(calc(-100% + 50%)); }
@@ -376,3 +345,87 @@ html, body {
   white-space: nowrap;
 }
 
+.track-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  width: 100%;
+  max-width: 70vw;        
+  overflow: hidden;     
+  margin: 0 auto;   
+}
+/* ảnh không bị co */
+.track-img-wrapper {
+  flex-shrink: 0;
+  position: relative;
+}
+
+.track-info {
+  flex: 1;
+  min-width: 0;      
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;    
+}
+
+.track-title-wrapper {
+  width: 80%;
+  overflow: hidden;
+  position: relative;
+}
+
+.track-title {
+  display: inline-block;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+
+  transform: translateX(0);
+  will-change: transform;
+}
+
+.track-title-wrapper:hover .track-title.marquee {
+  animation: marquee-scroll 8s ease-in-out infinite alternate;
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.track-artist-line {
+  margin-top: 4px;
+  width: 80%;
+  font-size: 14px;
+  color: #aaa;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  color: white;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  text-decoration: none;
+}
+
+.track-img-wrapper:hover .play-overlay {
+  opacity: 1;
+}
