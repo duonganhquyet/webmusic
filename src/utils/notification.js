@@ -40,3 +40,17 @@ export const notifyWarning = (title, message) => {
     });
   }
 };
+
+// Generic open to support custom actions (e.g., Undo buttons)
+export const notifyOpen = (options) => {
+  if (notificationApi) {
+    notificationApi.open(options);
+  }
+};
+
+// Destroy a notification by key
+export const notifyDestroy = (key) => {
+  if (notificationApi && key) {
+    notificationApi.destroy(key);
+  }
+};

@@ -109,7 +109,7 @@ const CommentTrack = (props) => {
             <div style={{display: "flex",alignContent: "center",flexDirection: "column"}}>
               <img
                 src={(track?.uploader?.imgUrl && track?.uploader?.imgUrl !== "default_avatar.png") 
-                                    ? `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${track?.uploader?.imgUrl}` 
+                                    ? `${import.meta.env.VITE_BACKEND_URL}/images/${track?.uploader?.imgUrl}` 
                                     : "../../../public/default_avatar.png"}
                 alt="Lỗi tải ảnh"
                 width={150}
@@ -153,7 +153,7 @@ const CommentTrack = (props) => {
                   <Space align="start" size={12}>
                     <Avatar
                       src={(comment?.user?.imgUrl && comment?.user?.imgUrl !== "default_avatar.png") 
-                                    ? `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${comment.user.imgUrl}` 
+                                    ? `${import.meta.env.VITE_BACKEND_URL}/images/${comment.user.imgUrl}` 
                                     : "../../../public/default_avatar.png"}
                                     
                       size={40}

@@ -1,7 +1,8 @@
+// src/services/api.js
 import axios from "./axios.customize";
 
+/* ========================= HOME / SONGS / COMMENTS ========================= */
 export const fetchHomeData = () => {
-    // SỬA: Thêm BASE_URL
     return axios.get(`/api/songs/home`);  
 };
 
@@ -14,27 +15,20 @@ export const fetchCommentById = (id) => {
     const urlBackend = `/api/comments/${id}`;
     return axios.get(urlBackend);
 };
+
 export const checkUsername = (username) => {
-    const urlBackend =  `/api/check-username`;
-    return axios.get(urlBackend,{
-        params: {username}
-    });
+    const urlBackend = `/api/check-username`;
+    return axios.get(urlBackend, { params: { username } });
 }
+
 export const registerUser = (username, password, fullName) => {
     const urlBackend = "/api/register";
-    return axios.post(urlBackend, {
-        username,
-        password,
-        name: fullName
-    });
+    return axios.post(urlBackend, { username, password, name: fullName });
 }
 
 export const loginUser = (username, password) => {
     const urlBackend = "/api/login";
-    return axios.post(urlBackend, {
-        username,
-        password
-    })
+    return axios.post(urlBackend, { username, password });
 }
 
 export const checkSession = () => {
@@ -42,16 +36,13 @@ export const checkSession = () => {
     return axios.get(urlBackend);
 }
 
-export const postCommentAPI = (userId,trackId, content, moment) => {
+/* ========================= COMMENTS ========================= */
+export const postCommentAPI = (userId, trackId, content, moment) => {
     const urlBackend = "/api/comments";
-    return axios.post(urlBackend, {
-        userId,
-        trackId,
-        content,
-        moment
-    });
+    return axios.post(urlBackend, { userId, trackId, content, moment });
 }
 
+/* ========================= USER PANELS ========================= */
 export const fetchDataGeneralPanel = () => {
     const urlBackend = "/api/user/stats";
     return axios.get(urlBackend);
@@ -61,10 +52,12 @@ export const fetchDataLikePanel = () => {
     const urlBackend = "/api/user/likes";
     return axios.get(urlBackend);
 }
+
 export const dislikeSongAPI = (songId) => {
     const urlBackend = `/api/song/${songId}/like`;
     return axios.delete(urlBackend);
 }
+
 export const likeSongAPI = (songId) => {
     const urlBackend = `/api/song/${songId}/like`;
     return axios.post(urlBackend);
@@ -77,7 +70,6 @@ export const fetchUserPlaylists = () => {
 
 export const createUserPlaylist = (payload) => {
     const urlBackend = "/api/library/playlists";
-    // Send JSON object; axios sets proper Content-Type
     return axios.post(urlBackend, payload);
 }
 
@@ -86,11 +78,60 @@ export const fetchPlaylistTracks = (playlistID) => {
     return axios.get(urlBackend);
 }
 
+export const addTrackToPlaylist = (playlistID, trackID) => {
+    // Backend should handle pushing the track into playlist.tracks
+    return axios.post(`/api/library/playlists/${playlistID}/tracks`, { trackId: trackID });
+}
+
+export const uploadPlaylistCover = (playlistID, formData) => {
+    return axios.post(`/api/library/playlists/${playlistID}/cover`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+}
+
+export const updatePlaylistInfo = (playlistID, data) => {
+    return axios.put(`/api/library/playlists/${playlistID}`, data);
+}
+
+export const deletePlaylist = (playlistID) => {
+    return axios.delete(`/api/library/playlists/${playlistID}`);
+}
+
 export const fetchFollowingArtists = () => {
     const urlBackend = `/api/follow/following`;
     return axios.get(urlBackend);
 }
 
+/* ========================= FOLLOW ========================= */
+
+// Lấy followers của một user
+// Nếu muốn public (không login) -> thêm isPublic = true
+export const fetchFollowers = (userId, isPublic = false) => {
+    const urlBackend = isPublic 
+        ? `/api/follow/public/followers/${userId}` 
+        : `/api/follow/followers/${userId}`;
+    return axios.get(urlBackend);
+};
+
+// Lấy following của một user
+export const fetchFollowing = (userId, isPublic = false) => {
+    const urlBackend = isPublic 
+        ? `/api/follow/public/following/${userId}` 
+        : `/api/follow/following`;
+    return axios.get(urlBackend);
+};
+
+// Check trạng thái follow (private)
+export const checkFollowStatus = (targetUserId) => {
+    return axios.get(`/api/follow/status/${targetUserId}`);
+}
+
+// Toggle follow/unfollow (private)
+export const toggleFollow = (targetUserId) => {
+    return axios.post("/api/follow", { followingId: targetUserId });
+}
+
+/* ========================= USER HISTORY ========================= */
 export const fetchUserHistory = () => {
     const urlBackend = `/api/user/history`;
     return axios.get(urlBackend);
@@ -101,10 +142,17 @@ export const clearUserHistory = () => {
     return axios.delete(urlBackend);
 }
 
-/* =========================================
-   2. CÁC HÀM MỚI (UPLOAD & SEARCH)
-   ========================================= */
+export const fetchHistory = async () => {
+    try {
+        const response = await axios.get('/api/history/get-history'); 
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching history:", error);
+        return [];
+    }
+}
 
+/* ========================= UPLOAD & SEARCH ========================= */
 export const searchSongs = (query) => {
     return axios.get(`/api/search?q=${encodeURIComponent(query)}`);
 };
@@ -123,25 +171,17 @@ export const uploadSongCover = (id, formData) => {
     return axios.post(`/api/songs/${id}/cover`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
     });
-  
 };
 
-export const fetchHistory = async () => {
+export const fetchSongsByUser = async (userId) => {
     try {
-        // Giả sử bạn đã cấu hình axios để tự động gửi Header Authorization
-        const response = await axios.get('/api/history/get-history'); 
-        return response.data;
-    } catch (error) {
-        console.error("Error fetching history:", error);
+        const res = await axios.get(`/api/user/${userId}/songs`);
+        return res.data || [];
+    } catch (err) {
+        console.error("Error fetching user songs:", err);
         return [];
     }
 };
-export const fetchSongsByUser = async (userId) => {
-  const res = await axios.get(`/api/users/${userId}/songs`);
-  // res lúc này === { songs: [...] }
-  return res.songs || [];
-};
-
 export const uploadSong = async (formData) => {
     const urlBackend = `/api/upload`;
     return axios.post(urlBackend, formData, {
@@ -160,7 +200,7 @@ export const checkSongLikeStatus = (songId) => {
         params: {id: songId}
     });
 }
-
+// check xem đã follow chưa
 export const checkFollowStatusAPI = (userId) => {
     const urlBackend = `/api/follow/status/${userId}`;
     return axios.get(urlBackend);

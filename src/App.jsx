@@ -21,7 +21,14 @@ const App = () => {
         })
       }
       else{
-        nav("/")
+        // Chỉ redirect nếu không phải trang profile người khác
+        // Profile route: /user/:id
+        const isProfileRoute = location.pathname.startsWith("/user/");
+        
+        if(!isProfileRoute){
+          nav("/") // redirect các trang private khác
+        }
+        // Nếu là profile người khác, không redirect, vẫn cho truy cập
       }
     }
     checkAuthOnLoad();

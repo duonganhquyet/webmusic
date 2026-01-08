@@ -25,15 +25,12 @@ const Header = () => {
     // --- 1. XỬ LÝ LIVE SEARCH (Tự động tìm khi gõ) ---
     useEffect(() => {
         const delayDebounceFn = setTimeout(async () => {
-            // Sửa điều kiện: > 0 để gõ 1 chữ "m" cũng tìm được
             if (searchTerm.trim().length > 0) { 
                 try {
-                    // Gọi trực tiếp URL không cần biến API_BASE
                     const res = await fetch(`http://localhost:8080/api/search?q=${encodeURIComponent(searchTerm)}`);
                     const data = await res.json();
-                    
                     const results = data.data || data.songs || (Array.isArray(data) ? data : []);
-                    setSuggestions(results.slice(0, 5)); // Lấy 5 kết quả
+                    setSuggestions(results.slice(0, 5));
                     setShowDropdown(true);
                 } catch (error) {
                     console.error("Lỗi tìm kiếm:", error);
@@ -42,7 +39,7 @@ const Header = () => {
                 setSuggestions([]);
                 setShowDropdown(false);
             }
-        }, 500); // Đợi 0.5s sau khi ngừng gõ
+        }, 500);
 
         return () => clearTimeout(delayDebounceFn);
     }, [searchTerm]);
@@ -58,14 +55,12 @@ const Header = () => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // --- 2. Xử lý khi chọn bài hát từ gợi ý ---
     const handleSelectSuggestion = (songId) => {
         navigate(`/track/${songId}`);
         setShowDropdown(false);
         setSearchTerm(""); 
     };
 
-    // Xử lý tìm kiếm (Enter hoặc nút Search)
     const handleSearch = (e) => {
         e.preventDefault(); 
         setShowDropdown(false);
@@ -74,16 +69,15 @@ const Header = () => {
         }
     };
 
-    // --- HÀM MỚI: Xử lý khi bấm Upload lúc CHƯA đăng nhập ---
     const handleUploadGuest = () => {
         alert("Vui lòng đăng nhập để thực hiện Upload!");
     };
     
     const handleLogout = () => {
-        // Xóa thông tin đăng nhập khỏi context
-        setAuth({ user: {} });
+        // ✅ Reset hoàn toàn auth context và localStorage
+        setAuth({ user: null, token: null });
         localStorage.removeItem("accessToken");
-        // Chuyển hướng về trang chủ hoặc trang đăng nhập
+        localStorage.removeItem("user");
         navigate("/");
     }
 
@@ -101,7 +95,6 @@ const Header = () => {
                 </div>
 
                 {/* --- CENTER SECTION (SEARCH) --- */}
-                {/* Thêm ref và style position: relative để dropdown bám dính vào đây */}
                 <div className="header-center" ref={searchRef} style={{position: 'relative', zIndex: 1000}}>
                     <form className="search-form" onSubmit={handleSearch}>
                         <input 
@@ -117,7 +110,6 @@ const Header = () => {
                         </button>
                     </form>
 
-                    {/* === PHẦN MỚI: DROPDOWN GỢI Ý === */}
                     {showDropdown && suggestions.length > 0 && (
                         <div className="search-dropdown">
                             {suggestions.map((song) => (
@@ -144,18 +136,17 @@ const Header = () => {
                 {/* --- RIGHT SECTION --- */}
                 <div className="header-right">
                     {isLoggedIn ? (
-                        // === TRƯỜNG HỢP: ĐÃ ĐĂNG NHẬP ===
                         <>
-                            {/* Dùng Link để chuyển trang bình thường */}
                             <Link to="/upload" className="upload-link">Upload</Link>
                             
                             <Link to={`/user/${auth.user._id}`} className="user-avatar">
-                                {/* <span></span> */}
-                                {(auth.user.imgUrl === "default_avatar.png") ? (<img src={`../../../public/${auth.user.imgUrl}`} style={{objectFit: "cover", width:"100%"}} alt="Ảnh avatar" />):
-                                <img src={`${import.meta.env.VITE_BACKEND_URL}/images/avatar/${auth?.user?.imgUrl}`} style={{objectFit: "cover", width:"100%"}} alt="Ảnh avatar" />
-                                }
-                                
-                                
+                                <img 
+                                    src={auth.user.imgUrl && auth.user.imgUrl !== "default_avatar.png" 
+                                        ? `${import.meta.env.VITE_BACKEND_URL}/images/${auth.user.imgUrl}` 
+                                        : "/default_avatar.png"} 
+                                    alt="Ảnh avatar" 
+                                    style={{ objectFit: "cover", width:"100%" }}
+                                />
                             </Link>
 
                             <button className="btn btn-logout" onClick={handleLogout}>
@@ -163,9 +154,7 @@ const Header = () => {
                             </button>
                         </>
                     ) : (
-                        // === TRƯỜNG HỢP: CHƯA ĐĂNG NHẬP ===
                         <>
-                            {/* Thay Link bằng thẻ span và thêm sự kiện onClick báo lỗi */}
                             <span 
                                 className="upload-link" 
                                 onClick={handleUploadGuest} 

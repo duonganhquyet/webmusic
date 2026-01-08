@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import "./PlaylistCreateModal.css";
 
 export default function PlaylistCreateModal({ onClose, onSubmit }) {
@@ -9,6 +9,9 @@ export default function PlaylistCreateModal({ onClose, onSubmit }) {
     isPublic: true,
   });
   const [errors, setErrors] = useState({});
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const fileInputRef = useRef(null);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -32,15 +35,27 @@ export default function PlaylistCreateModal({ onClose, onSubmit }) {
     const payload = {
       title: form.title.trim(),
       description: form.description.trim() || undefined,
-      imgUrl: form.imgUrl.trim() || undefined,
       isPublic: !!form.isPublic,
       // 'user' and 'tracks' managed server-side; not collected here
     };
     try {
-      onSubmit?.(payload);
+      // Pass both json payload and optional file
+      onSubmit?.(payload, selectedFile || null);
       onClose?.();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handlePickFile = () => fileInputRef.current?.click();
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    setSelectedFile(file || null);
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    } else {
+      setPreviewUrl("");
     }
   };
 
@@ -79,15 +94,23 @@ export default function PlaylistCreateModal({ onClose, onSubmit }) {
           </div>
 
           <div className="form-row">
-            <label htmlFor="imgUrl">Ảnh (không bắt buộc)</label>
-            <input
-              id="imgUrl"
-              name="imgUrl"
-              type="text"
-              value={form.imgUrl}
-              onChange={handleChange}
-              placeholder="Link ảnh bìa hoặc để trống"
-            />
+            <label>Ảnh bìa (tùy chọn)</label>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div style={{ width: 96, height: 96, background: '#111', borderRadius: 8, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {previewUrl ? (
+                  <img src={previewUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span style={{ color: '#777', fontSize: 12 }}>No cover</span>
+                )}
+              </div>
+              <div style={{ display: 'grid', gap: 8, flex: 1 }}>
+                <div>
+                  <input ref={fileInputRef} type="file" accept="image/*" hidden onChange={handleFileChange} />
+                  <button type="button" className="btn secondary" onClick={handlePickFile}>Chọn ảnh từ máy</button>
+                  {selectedFile && <span style={{ marginLeft: 8, fontSize: 12 }}>{selectedFile.name}</span>}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="form-row inline">

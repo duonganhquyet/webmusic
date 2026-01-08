@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { loginUser } from '../../services/api'
 import { useAuthContext } from '../../contexts/auth.context'
+import { notifySuccess, notifyError } from '../../utils/notification' 
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false)
@@ -32,24 +33,32 @@ function Login() {
           user: res.data.user
         })
 
-        alert("Đăng nhập thành công!");
+        // ✅ 3. Thay alert bằng notifySuccess
+        // Lấy tên hiển thị: ưu tiên name, nếu không có thì lấy username
+        const displayName = res.data.user.name || res.data.user.username || "User";
+        notifySuccess("Đăng nhập thành công!", `Chào mừng ${displayName} quay trở lại.`);
 
-        // === SỬA Ở ĐÂY: Kiểm tra quyền Admin ===
-        // Giả sử server trả về field "role" trong object user
+        // === Kiểm tra quyền Admin ===
         if (res.data.user.role === "admin") {
-            navigate("/admin"); // Nếu là admin -> Sang trang Admin
+            navigate("/admin"); 
         } else {
-            navigate("/");      // Nếu là user thường -> Về trang chủ
+            navigate("/");      
         }
         // =======================================
 
       } else {
-        return setError("Login failed. Please try again.")
+        // ✅ 4. Thông báo lỗi khi API không trả về data hợp lệ
+        const msg = "Đăng nhập thất bại. Vui lòng thử lại.";
+        setError(msg); // Vẫn giữ text đỏ dưới form (tuỳ chọn)
+        notifyError("Đăng nhập thất bại", msg);
       }
 
     } catch (err) {
-      console.error(err); // Log lỗi ra để debug nếu cần
-      setError(err.message || "Something went wrong")
+      console.error(err); 
+      // ✅ 5. Thông báo lỗi hệ thống (sai pass, server lỗi, v.v.)
+      const errorMsg = err.message || "Có lỗi xảy ra trong quá trình đăng nhập.";
+      setError(errorMsg);
+      notifyError("Lỗi", errorMsg);
     }
   }
 
@@ -62,7 +71,8 @@ function Login() {
       <form className="login-form" onSubmit={handleSubmit}>
         <h1>Login</h1>
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {/* Vẫn giữ error text nếu bạn muốn hiển thị cả 2 nơi, hoặc có thể bỏ dòng này */}
+        {error && <p style={{ color: "red", textAlign: 'center', marginBottom: '10px' }}>{error}</p>}
         
         <div className="form-group-login">
           <label htmlFor="username">Username</label>

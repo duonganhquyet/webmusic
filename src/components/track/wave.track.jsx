@@ -208,7 +208,7 @@ const WaveTrack = (props) => {
                                     borderRadius: "50%"
                                 }}
                                 src={(v?.user?.imgUrl && v?.user?.imgUrl !== "default_avatar.png") 
-                                    ? `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${v.user.imgUrl}` 
+                                    ? `${import.meta.env.VITE_BACKEND_URL}/images/${v.user.imgUrl}` 
                                     : "../../../public/default_avatar.png"}
                                 alt="U"
                                  />
