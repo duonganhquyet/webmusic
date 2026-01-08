@@ -9,7 +9,7 @@ export default function FollowingPanel() {
   const currentUserId = auth?.user?._id || auth?.user?.id;
   const [listFollowed, setListFollowed] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(""); 
 
   useEffect(() => {
 
@@ -22,15 +22,18 @@ export default function FollowingPanel() {
           return;
         }
         const res = await fetchFollowing(currentUserId);
-        // Normalize various possible response shapes
-        const list = res?.data?.following || res?.following || res?.data?.data || [];
-        const normalized = (Array.isArray(list) ? list : []).map((f) => {
-          const u = f.following || f.user || f.target || f;
+        // Handle both axios response shapes
+        const payload = res?.data ?? res ?? {};
+        const list = Array.isArray(payload.following) ? payload.following : [];
+        const normalized = list.map((f) => {
+          const u = f?.following || {};
           return {
-            _id: u?._id || f?._id,
-            name: u?.name || u?.fullName || u?.username || u?.userName || 'Unknown User',
-            username: u?.username || u?.userName || u?.name || 'user',
-            imgUrl: u?.imgUrl || u?.avatar || u?.avatarUrl || u?.photo || u?.profileImage || u?.image,
+            _id: u._id || f._id,
+            name: u.name || 'Unknown User',
+            // Prefer explicit username; fallback to name to display as @name
+            username: u.username || u.name || 'user',
+            // Ensure avatar always has a value; default resolves to backend /images/default_avatar.png
+            imgUrl: u.imgUrl || 'default_avatar.png',
           };
         });
         setListFollowed(normalized);

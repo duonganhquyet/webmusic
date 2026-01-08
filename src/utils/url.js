@@ -14,5 +14,9 @@ export function resolveAvatarUrl(path) {
   if (!path) return null;
   if (/^https?:\/\//i.test(path)) return path;
   if (path.startsWith("/")) return `${BACKEND_URL}${path}`;
-  return `${BACKEND_URL}/images/${path}`;
+  // Normalize common avatar storage variants
+  if (path.startsWith("images/")) return `${BACKEND_URL}/${path}`;
+  if (path.startsWith("avatar/")) return `${BACKEND_URL}/images/${path}`;
+  // Default: plain filename stored under /images/avatar
+  return `${BACKEND_URL}/images/avatar/${path}`;
 }
