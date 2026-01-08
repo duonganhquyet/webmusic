@@ -65,13 +65,13 @@
 .song-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px; /* cách đều hơn một chút */
 }
 
 .like-btn,
 .copy-btn,
 .add-btn,
-.more-btn {
+.delete-btn {
   background: transparent;
   border: none;
   font-size: 18px;
@@ -83,6 +83,6 @@
 .like-btn:hover,
 .copy-btn:hover,
 .add-btn:hover,
-.more-btn:hover {
+.delete-btn:hover {
   opacity: 1;
 }

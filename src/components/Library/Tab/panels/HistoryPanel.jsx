@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { clearUserHistory, dislikeSongAPI, fetchUserHistory, likeSongAPI } from "../../../../services/api";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../../../contexts/auth.context";
+import { resolveAssetUrl } from "../../../../utils/url";
 
 export default function HistoryPanel(props) {
   const {setChanged, changed}= props;
@@ -112,20 +113,23 @@ export default function HistoryPanel(props) {
       {!loading && !error && (
         <>
           <div className="song-list">
-            {history.map(song => (
-              <div key={song.id} className="history-item">
+            {history.map(song => {
+              const sid = song.id || song._id;
+              const cover = resolveAssetUrl(song.imgUrl || song.image) || "/default-cover.png";
+              return (
+              <div key={sid} className="history-item">
                 <SongItem
-                  cover={song.image || "https://via.placeholder.com/300"}
+                  cover={cover}
                   title={song.title || "Unknown Title"}
                   artist={song.artistName || "Unknown Artist"}
                   liked={song.liked === true}
-                  onPlay={() => navigate(`/track/${song.id}`)}
+                  onPlay={() => navigate(`/track/${sid}`)}
                   onLike={async (nextLiked) => {
                     if(nextLiked){
-                      handleLikeToggle(song.id)
+                      handleLikeToggle(sid)
                     }
                     else{
-                      handleDislikeToggle(song.id)
+                      handleDislikeToggle(sid)
                   }
                   }}
                 />
@@ -133,7 +137,7 @@ export default function HistoryPanel(props) {
                   {song.listenedAt ? new Date(song.listenedAt).toLocaleString() : ""}
                 </span>
               </div>
-            ))}
+            )})}
           </div>
 
           {history.length === 0 && (

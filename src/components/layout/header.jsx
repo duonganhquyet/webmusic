@@ -91,7 +91,7 @@ const Header = () => {
 
     const getAvatarUrl = (imgUrl) => {
          if (!imgUrl || imgUrl === "default_avatar.png") return "/default_avatar.png";
-         return `${import.meta.env.VITE_BACKEND_URL}/images/${imgUrl}`;
+         return `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${imgUrl}`;
     }
 
     return (

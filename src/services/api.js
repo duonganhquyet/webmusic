@@ -83,6 +83,11 @@ export const addTrackToPlaylist = (playlistID, trackID) => {
     return axios.post(`/api/library/playlists/${playlistID}/tracks`, { trackId: trackID });
 }
 
+export const removeTrackFromPlaylist = (playlistID, trackID) => {
+    return axios.delete(`/api/library/playlists/${playlistID}/tracks/${trackID}`);
+}
+
+
 export const uploadPlaylistCover = (playlistID, formData) => {
     return axios.post(`/api/library/playlists/${playlistID}/cover`, formData, {
         headers: { "Content-Type": "multipart/form-data" },

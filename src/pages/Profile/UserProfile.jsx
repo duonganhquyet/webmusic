@@ -38,75 +38,49 @@ const UserProfile = () => {
   }, [tracks]);
 
   /* ================= FETCH DATA ================= */
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        let profileUser = null;
+useEffect(() => {
+  const fetchProfileData = async () => {
+    try {
+      setLoading(true);
 
-        if (isOwner) {
-          profileUser = currentUser;
-        } else {
-          try {
-            const res = await axios.get(`/api/user/public/${id}`, { skipAuth: true });
-            profileUser = res?.user || res?.data?.user || null;
-          } catch (err) {
-            console.warn("Không thể fetch public user:", err);
-            profileUser = null;
-          }
-        }
+      // 1. FETCH PROFILE USER (LUÔN THEO ID URL)
+      const userRes = await axios.get(`/api/user/public/${id}`, { skipAuth: true });
+      const profileUser = userRes?.data?.user;
 
-        if (!profileUser) {
-          setUser(null);
-          return;
-        }
-        setUser(profileUser);
-
-        // ================= FETCH FOLLOWERS/FOLLOWING =================
-        let followersCount = 0;
-        let followingCount = 0;
-
-        if (currentUser) {
-          // Logged in → dùng route private
-          try {
-            const [followersList, followingObj] = await Promise.all([
-              axios.get(`/api/follow/followers/${profileUser._id}`),
-              axios.get(`/api/follow/following/${profileUser._id}`),
-            ]);
-            followersCount = Array.isArray(followersList) ? followersList.length : 0;
-            followingCount = followingObj?.count || 0;
-          } catch {}
-        } else {
-          // Not logged in → dùng route public
-          try {
-            const [followersRes, followingRes] = await Promise.all([
-              axios.get(`/api/follow/public/followers/${profileUser._id}`, { skipAuth: true }),
-              axios.get(`/api/follow/public/following/${profileUser._id}`, { skipAuth: true }),
-            ]);
-            followersCount = followersRes?.followers || 0;
-            followingCount = followingRes?.following || 0;
-          } catch {}
-        }
-
-        setStats((prev) => ({
-          ...prev,
-          followers: followersCount,
-          following: followingCount,
-        }));
-
-        // ================= FETCH TRACKS =================
-        const userTracks = await fetchSongsByUser(profileUser._id).catch(() => []);
-        setTracks(userTracks);
-        setStats((prev) => ({ ...prev, tracks: userTracks.length }));
-      } catch (err) {
-        console.error("Error fetching profile:", err);
+      if (!profileUser) {
         setUser(null);
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
 
-    fetchProfileData();
-  }, [id, isOwner, currentUser]);
+      setUser(profileUser);
+
+      // 2. FETCH FOLLOW STATS (LUÔN DÙNG ID URL)
+      const [followersRes, followingRes] = await Promise.all([
+        axios.get(`/api/follow/public/followers/${id}`, { skipAuth: true }),
+        axios.get(`/api/follow/public/following/${id}`, { skipAuth: true }),
+      ]);
+
+      setStats((prev) => ({
+        ...prev,
+        followers: followersRes?.followers || 0,
+        following: followingRes?.following || 0,
+      }));
+
+      // 3. FETCH TRACKS
+      const userTracks = await fetchSongsByUser(id).catch(() => []);
+      setTracks(userTracks);
+      setStats((prev) => ({ ...prev, tracks: userTracks.length }));
+    } catch (err) {
+      console.error(err);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchProfileData();
+}, [id]);
+
 
   const totalPages = Math.ceil(tracks.length / ITEMS_PER_PAGE);
   const paginatedTracks = tracks.slice(

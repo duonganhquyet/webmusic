@@ -22,9 +22,18 @@ export default function FollowingPanel() {
           return;
         }
         const res = await fetchFollowing(currentUserId);
-        // API returns { following, count }
-        const list = res?.following || res?.data?.following || [];
-        setListFollowed(Array.isArray(list) ? list : []);
+        // Normalize various possible response shapes
+        const list = res?.data?.following || res?.following || res?.data?.data || [];
+        const normalized = (Array.isArray(list) ? list : []).map((f) => {
+          const u = f.following || f.user || f.target || f;
+          return {
+            _id: u?._id || f?._id,
+            name: u?.name || u?.fullName || u?.username || u?.userName || 'Unknown User',
+            username: u?.username || u?.userName || u?.name || 'user',
+            imgUrl: u?.imgUrl || u?.avatar || u?.avatarUrl || u?.photo || u?.profileImage || u?.image,
+          };
+        });
+        setListFollowed(normalized);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -44,15 +53,14 @@ export default function FollowingPanel() {
         <>
           <p>Danh sách nghệ sĩ / người dùng bạn theo dõi. ({listFollowed.length} users)</p>
           <div className="following-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
-            {listFollowed.map((f) => {
-              const user = f.following || f; // safety: some responses may flatten
-              const avatar = resolveAvatarUrl(user?.imgUrl) || "../../../../../public/default_avatar.png";
-              const uid = user?._id || f?._id;
+            {listFollowed.map((user) => {
+              const avatar = resolveAvatarUrl(user?.imgUrl) || "/default_avatar.png";
+              const uid = user?._id;
               return (
                 <Link key={uid} to={`/user/${uid}`} style={{ textDecoration: 'none' }}>
                   <div className="following-card" style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ width: 44, height: 44, borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
-                      <img src={avatar} alt={user?.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={avatar} alt={user?.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e)=>{ e.currentTarget.src = '/default_avatar.png'; }} />
                     </div>
                     <div style={{ minWidth: 0 }}>
                       <div style={{ color: '#fff', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

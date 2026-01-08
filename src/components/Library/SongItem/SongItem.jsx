@@ -11,6 +11,7 @@ export default function SongItem({
   onCopy,
   onAddToPlaylist,
   onMore,
+  onDelete,
 }) {
   const [isLiked, setIsLiked] = useState(liked);
 
@@ -41,7 +42,11 @@ export default function SongItem({
       </div>
 
       <div className="song-actions">
-        <button className="like-btn" onClick={toggleLike}>
+        <button
+          className="like-btn"
+          onClick={toggleLike}
+          title={isLiked ? "Bỏ thích" : "Thích"}
+        >
           {isLiked ? "❤️" : "🤍"}
         </button>
 
@@ -51,10 +56,23 @@ export default function SongItem({
             e.stopPropagation();
             if (onCopy) onCopy();
           }}
-          title="Copy link"
+          title="Sao chép liên kết"
         >
           🔗
         </button>
+
+        {onDelete && (
+          <button
+            className="delete-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            title="Xóa khỏi playlist"
+          >
+            🗑️
+          </button>
+        )}
 
         <button
           className="add-btn"
@@ -62,20 +80,11 @@ export default function SongItem({
             e.stopPropagation();
             onAddToPlaylist && onAddToPlaylist();
           }}
-          title="Add to playlist"
+          title="Thêm vào playlist"
         >
           ➕
         </button>
-
-        <button
-          className="more-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            onMore && onMore();
-          }}
-        >
-          ⋯
-        </button>
+        {/* Bỏ nút '...' ở cuối theo yêu cầu */}
       </div>
     </div>
   );
