@@ -18,6 +18,9 @@ const { Option } = Select;
 
 const API_BASE = "http://localhost:8080";
 
+// Style cho input để không bị lỗi nền đen chữ đen
+const inputStyle = { backgroundColor: '#ffffff', color: '#000000' };
+
 const AdminPage = () => {
   const navigate = useNavigate();
   const { auth, setAuth } = useAuthContext();
@@ -31,30 +34,26 @@ const AdminPage = () => {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState(''); 
-  const [actionType, setActionType] = useState(''); 
+  const [modalType, setModalType] = useState(''); // 'SONG' hoặc 'USER'
+  const [actionType, setActionType] = useState(''); // 'ADD' hoặc 'EDIT'
   const [editingItem, setEditingItem] = useState(null);
   
-  // --- STATE FILE UPLOAD ---
+  // File Upload State
   const [mp3File, setMp3File] = useState(null);   
   const [coverFile, setCoverFile] = useState(null); 
-  // State quản lý danh sách file trên UI (để hiển thị tên file)
   const [fileListMp3, setFileListMp3] = useState([]);
   const [fileListCover, setFileListCover] = useState([]);
   
   const [form] = Form.useForm();
 
-  // ✅ Hàm lấy Token từ LocalStorage
   const getToken = () => localStorage.getItem("accessToken");
 
-  // Hàm xử lý link ảnh
   const getImageUrl = (path) => {
     if (!path) return "";
     if (path.startsWith("http")) return path;
     return `${API_BASE}${path.startsWith("/") ? "" : "/"}${path}`;
   };
 
-  // CHECK QUYỀN
   useEffect(() => {
     if (auth.user && auth.user.role !== 'admin') {
       message.error('Bạn không có quyền truy cập trang quản trị!');
@@ -66,36 +65,40 @@ const AdminPage = () => {
 
   const loadData = async () => {
     setLoading(true);
+    const token = getToken();
+
+    // 1. Tải danh sách bài hát
     try {
       const res = await fetchHomeData();
       const listSongs = res.allSongs || res.songs || (res.data && res.data.allSongs) || [];
       setSongs(listSongs);
-      
-      // ✅ THÊM HEADER AUTH VÀO ĐÂY
+    } catch (error) {
+      console.error("Lỗi tải bài hát:", error);
+    }
+
+    // 2. Tải danh sách User
+    try {
       const resUser = await fetch(`${API_BASE}/api/users`, {
-        headers: {
-            "Authorization": `Bearer ${getToken()}`
-        }
+        headers: { "Authorization": `Bearer ${token}` }
       });
       if (resUser.ok) {
         const dataUser = await resUser.json();
-        setUsers(dataUser.data || dataUser.users || []);
-      } 
+        const listUsers = dataUser.data || dataUser.users || [];
+        setUsers(listUsers);
+      }
     } catch (error) {
-      console.error(error);
+       console.error("Lỗi tải users:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // MỞ MODAL
   const handleOpenModal = (type, action, item = null) => {
     setModalType(type);
     setActionType(action);
     setEditingItem(item);
     setIsModalOpen(true);
     
-    // Reset file mỗi khi mở modal
     setMp3File(null);
     setCoverFile(null);
     setFileListMp3([]);
@@ -108,70 +111,83 @@ const AdminPage = () => {
     }
   };
 
-  // --- XỬ LÝ LOGIC LƯU ---
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields(); 
-      const token = getToken(); // Lấy token
-
-      // KIỂM TRA FILE MP3
-      if (modalType === 'SONG' && actionType === 'ADD' && !mp3File) {
-          return message.error("Vui lòng chọn file nhạc (MP3)!");
-      }
-
+      const token = getToken();
       setLoading(true);
 
-      // === TRƯỜNG HỢP 1: THÊM MỚI BÀI HÁT ===
-      if (modalType === 'SONG' && actionType === 'ADD') {
-          
-          // BƯỚC 1: Upload MP3 (FormData -> KHÔNG set Content-Type thủ công)
-          const formDataMp3 = new FormData();
-          formDataMp3.append("files", mp3File); 
+      // --- XỬ LÝ BÀI HÁT ---
+      if (modalType === 'SONG') {
+          if (actionType === 'ADD') {
+              if (!mp3File) throw new Error("Vui lòng chọn file nhạc!");
 
-          const resUpload = await fetch(`${API_BASE}/api/upload`, {
-              method: "POST",
-              headers: { 
-                  "Authorization": `Bearer ${token}` 
-              },
-              body: formDataMp3
-          });
-          const dataUpload = await resUpload.json();
-          if (!resUpload.ok) throw new Error(dataUpload.message || "Lỗi upload nhạc");
-
-          // Lấy ID bài hát
-          const newSong = Array.isArray(dataUpload.data) ? dataUpload.data[0] : dataUpload.data;
-          const newSongId = newSong._id;
-
-          // BƯỚC 2: Cập nhật thông tin (JSON -> CẦN Content-Type)
-          await fetch(`${API_BASE}/api/songs/${newSongId}`, {
-              method: "PUT",
-              headers: { 
-                  'Content-Type': 'application/json',
-                  "Authorization": `Bearer ${token}`
-              },
-              body: JSON.stringify(values)
-          });
-
-          // BƯỚC 3: Upload ảnh bìa
-          if (coverFile) {
-              const formDataCover = new FormData();
-              formDataCover.append("cover", coverFile);
-              await fetch(`${API_BASE}/api/songs/${newSongId}/cover`, {
+              // B1: Upload MP3
+              const formDataMp3 = new FormData();
+              formDataMp3.append("files", mp3File);
+              const resUpload = await fetch(`${API_BASE}/api/upload`, {
                   method: "POST",
                   headers: { "Authorization": `Bearer ${token}` },
-                  body: formDataCover
+                  body: formDataMp3
               });
+              const dataUpload = await resUpload.json();
+              if (!resUpload.ok) throw new Error("Lỗi upload nhạc");
+
+              const newSongId = Array.isArray(dataUpload.data) ? dataUpload.data[0]._id : dataUpload.data._id;
+
+              // B2: Cập nhật thông tin (Artist, Title, Category...)
+              await fetch(`${API_BASE}/api/songs/${newSongId}`, {
+                  method: "PUT",
+                  headers: { 
+                      'Content-Type': 'application/json',
+                      "Authorization": `Bearer ${token}`
+                  },
+                  body: JSON.stringify(values)
+              });
+
+              // B3: Upload Cover
+              if (coverFile) {
+                  const formDataCover = new FormData();
+                  formDataCover.append("cover", coverFile);
+                  await fetch(`${API_BASE}/api/songs/${newSongId}/cover`, {
+                      method: "POST",
+                      headers: { "Authorization": `Bearer ${token}` },
+                      body: formDataCover
+                  });
+              }
+              message.success("Thêm bài hát thành công!");
+          } else {
+              // EDIT SONG
+              await fetch(`${API_BASE}/api/songs/${editingItem._id}`, {
+                  method: "PUT",
+                  headers: { 
+                      'Content-Type': 'application/json',
+                      "Authorization": `Bearer ${token}`
+                  },
+                  body: JSON.stringify(values)
+              });
+
+              if (coverFile) {
+                  const formDataCover = new FormData();
+                  formDataCover.append("cover", coverFile);
+                  await fetch(`${API_BASE}/api/songs/${editingItem._id}/cover`, {
+                      method: "POST",
+                      headers: { "Authorization": `Bearer ${token}` },
+                      body: formDataCover
+                  });
+              }
+              message.success("Cập nhật bài hát thành công!");
           }
-
-          message.success("Thêm bài hát mới thành công!");
-
       } 
-      // === TRƯỜNG HỢP 2: CÁC TRƯỜNG HỢP KHÁC ===
-      else {
-          let url = `${API_BASE}/api/${modalType === 'SONG' ? 'songs' : 'users'}`;
-          let method = actionType === 'ADD' ? 'POST' : 'PUT';
+      // --- XỬ LÝ USER ---
+      else if (modalType === 'USER') {
+          const url = actionType === 'ADD' 
+              ? `${API_BASE}/api/users` 
+              : `${API_BASE}/api/users/${editingItem._id}`;
           
-          if (actionType === 'EDIT') url += `/${editingItem._id}`;
+          const method = actionType === 'ADD' ? 'POST' : 'PUT';
+
+          if (actionType === 'EDIT' && !values.password) delete values.password;
 
           const res = await fetch(url, {
               method: method,
@@ -181,23 +197,9 @@ const AdminPage = () => {
               },
               body: JSON.stringify(values)
           });
-          
-          if (!res.ok) {
-              const errData = await res.json();
-              throw new Error(errData.message || "Lỗi thao tác");
-          }
 
-          // Upload ảnh bìa mới khi sửa bài hát
-          if (modalType === 'SONG' && actionType === 'EDIT' && coverFile) {
-              const formDataCover = new FormData();
-              formDataCover.append("cover", coverFile);
-              await fetch(`${API_BASE}/api/songs/${editingItem._id}/cover`, {
-                  method: "POST",
-                  headers: { "Authorization": `Bearer ${token}` },
-                  body: formDataCover
-              });
-          }
-          message.success("Cập nhật thành công!");
+          if (!res.ok) throw new Error("Lỗi xử lý user");
+          message.success(actionType === 'ADD' ? "Thêm user thành công!" : "Cập nhật user thành công!");
       }
 
       setIsModalOpen(false);
@@ -214,15 +216,18 @@ const AdminPage = () => {
   const handleDelete = async (id, type) => {
     try {
       const endpoint = type === 'song' ? 'songs' : 'users';
-      // ✅ THÊM HEADER AUTH VÀO ĐÂY
-      await fetch(`${API_BASE}/api/${endpoint}/${id}`, { 
+      const res = await fetch(`${API_BASE}/api/${endpoint}/${id}`, { 
           method: 'DELETE',
           headers: { "Authorization": `Bearer ${getToken()}` }
       });
-      message.success('Đã xóa thành công!');
-      loadData();
+      if(res.ok) {
+          message.success('Đã xóa thành công!');
+          loadData();
+      } else {
+          message.error("Xóa thất bại");
+      }
     } catch (error) {
-      message.error("Xóa thất bại");
+      message.error("Lỗi kết nối");
     }
   };
 
@@ -232,14 +237,22 @@ const AdminPage = () => {
       navigate("/");
   }
 
-  // --- COLUMN DEFINITIONS ---
+  // --- CẤU HÌNH CỘT BẢNG ---
   const songColumns = [
-    { title: 'Cover', dataIndex: 'imgUrl', render: (u) => <Avatar shape="square" size={50} src={getImageUrl(u)} /> },
-    { title: 'Title', dataIndex: 'title', width: '25%' },
-    { title: 'Artist', render: (_, r) => (r.uploader && r.uploader.name) ? r.uploader.name : (r.description || "Unknown") },
-    { title: 'Stats', render: (_, r) => <Space><SoundOutlined />{r.countPlay} <br/><BarChartOutlined />{r.countLike}</Space> },
+    { title: 'Ảnh bìa', dataIndex: 'imgUrl', render: (u) => <Avatar shape="square" size={50} src={getImageUrl(u)} /> },
+    { title: 'Tên bài hát', dataIndex: 'title', width: '25%' },
+    
+    // ✅ THAY ĐỔI: Hiển thị trường description là Ca sĩ
+    { 
+      title: 'Ca sĩ', 
+      dataIndex: 'description', 
+      render: (text) => <b style={{color: '#1890ff'}}>{text || "Chưa cập nhật"}</b> 
+    },
+    
+    { title: 'Thể loại', dataIndex: 'category', render: (t) => <Tag color="blue">{t || "Nhạc Trẻ"}</Tag> },
+    { title: 'Thống kê', render: (_, r) => <Space><SoundOutlined />{r.countPlay} <br/><BarChartOutlined />{r.countLike}</Space> },
     {
-      title: 'Action',
+      title: 'Hành động',
       render: (_, record) => (
         <Space>
           <Button icon={<EditOutlined />} onClick={() => handleOpenModal('SONG', 'EDIT', record)} />
@@ -254,10 +267,10 @@ const AdminPage = () => {
   const userColumns = [
     { title: 'Avatar', dataIndex: 'imgUrl', render: (u) => <Avatar src={getImageUrl(u)} /> },
     { title: 'Username', dataIndex: 'username', render: t => <b>{t}</b> },
-    { title: 'Name', dataIndex: 'name' },
-    { title: 'Role', dataIndex: 'role', render: r => <Tag color={r === 'admin' ? 'red' : 'green'}>{r ? r.toUpperCase() : 'USER'}</Tag> },
+    { title: 'Tên hiển thị', dataIndex: 'name' },
+    { title: 'Vai trò', dataIndex: 'role', render: r => <Tag color={r === 'admin' ? 'red' : 'green'}>{r ? r.toUpperCase() : 'USER'}</Tag> },
     {
-      title: 'Action',
+      title: 'Hành động',
       render: (_, record) => (
         <Space>
           <Button icon={<EditOutlined />} onClick={() => handleOpenModal('USER', 'EDIT', record)} />
@@ -343,75 +356,60 @@ const AdminPage = () => {
         <Form form={form} layout="vertical">
           {modalType === 'SONG' ? (
             <>
-              {/* --- PHẦN UPLOAD FILE ĐÃ SỬA UI --- */}
               {actionType === 'ADD' && (
                   <Form.Item label="File Nhạc (MP3)" required>
                       <Upload 
-                        beforeUpload={(file) => { 
-                            setMp3File(file); 
-                            setFileListMp3([file]); // Cập nhật UI list
-                            return false; 
-                        }}
-                        onRemove={() => { 
-                            setMp3File(null); 
-                            setFileListMp3([]); 
-                        }}
-                        fileList={fileListMp3} // Gắn list file vào UI
+                        beforeUpload={(file) => { setMp3File(file); setFileListMp3([file]); return false; }}
+                        onRemove={() => { setMp3File(null); setFileListMp3([]); }}
+                        fileList={fileListMp3} 
                         maxCount={1} accept="audio/*"
                       >
                           <Button icon={<UploadOutlined />}>Chọn file nhạc</Button>
                       </Upload>
                   </Form.Item>
               )}
-
               <Form.Item label="Ảnh bìa (Cover)">
                   <Upload 
-                    beforeUpload={(file) => { 
-                        setCoverFile(file); 
-                        setFileListCover([file]); 
-                        return false; 
-                    }}
-                    onRemove={() => { 
-                        setCoverFile(null); 
-                        setFileListCover([]); 
-                    }}
+                    beforeUpload={(file) => { setCoverFile(file); setFileListCover([file]); return false; }}
+                    onRemove={() => { setCoverFile(null); setFileListCover([]); }}
                     fileList={fileListCover}
                     maxCount={1} accept="image/*"
                   >
                       <Button icon={<UploadOutlined />}>Chọn ảnh bìa</Button>
                   </Upload>
               </Form.Item>
-              {/* ----------------------------- */}
 
-              <Form.Item name="title" label="Tên bài hát" rules={[{ required: true, message: 'Nhập tên bài hát' }]}>
-                <Input />
+              <Form.Item name="title" label="Tên bài hát" rules={[{ required: true }]}>
+                <Input style={inputStyle} />
               </Form.Item>
-              <Form.Item name="description" label="Nghệ sĩ / Mô tả">
-                <Input />
+              
+              {/* ✅ THAY ĐỔI: Label "Tên Ca sĩ" và map vào field "description" */}
+              <Form.Item name="description" label="Tên Ca sĩ" rules={[{ required: true, message: 'Nhập tên ca sĩ' }]}>
+                <Input style={inputStyle} placeholder="Ví dụ: Dương Domic" />
               </Form.Item>
+
               <Form.Item name="category" label="Thể loại">
-                <Input />
+                <Input style={inputStyle} placeholder="Ví dụ: RAP, POP" />
               </Form.Item>
             </>
           ) : (
             <>
               <Form.Item name="username" label="Tên đăng nhập" rules={[{ required: true }]}>
-                <Input disabled={actionType === 'EDIT'} /> 
+                <Input disabled={actionType === 'EDIT'} style={inputStyle} /> 
               </Form.Item>
-              <Form.Item name="name" label="Tên hiển thị">
-                <Input />
+              <Form.Item name="name" label="Tên hiển thị" rules={[{ required: true }]}>
+                <Input style={inputStyle} />
               </Form.Item>
               <Form.Item name="role" label="Phân quyền" rules={[{ required: true }]}>
-                <Select>
+                <Select style={{ width: '100%' }}>
                   <Option value="user">User</Option>
                   <Option value="admin">Admin</Option>
                 </Select>
               </Form.Item>
-              {actionType === 'ADD' && (
-                 <Form.Item name="password" label="Mật khẩu" rules={[{ required: true }]}>
-                   <Input.Password />
-                 </Form.Item>
-              )}
+              <Form.Item name="password" label={actionType === 'ADD' ? "Mật khẩu" : "Mật khẩu mới"} 
+                rules={[{ required: actionType === 'ADD' }]}>
+                <Input.Password style={inputStyle} />
+              </Form.Item>
             </>
           )}
         </Form>

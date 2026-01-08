@@ -1,7 +1,7 @@
+// src/services/api.js
 import axios from "./axios.customize";
 
 export const fetchHomeData = () => {
-    // SỬA: Thêm BASE_URL
     return axios.get(`/api/songs/home`);  
 };
 
@@ -14,12 +14,14 @@ export const fetchCommentById = (id) => {
     const urlBackend = `/api/comments/${id}`;
     return axios.get(urlBackend);
 };
+
 export const checkUsername = (username) => {
     const urlBackend =  `/api/check-username`;
     return axios.get(urlBackend,{
         params: {username}
     });
 }
+
 export const registerUser = (username, password, fullName) => {
     const urlBackend = "/api/register";
     return axios.post(urlBackend, {
@@ -77,7 +79,6 @@ export const fetchUserPlaylists = () => {
 
 export const createUserPlaylist = (payload) => {
     const urlBackend = "/api/library/playlists";
-    // Send JSON object; axios sets proper Content-Type
     return axios.post(urlBackend, payload);
 }
 
@@ -123,22 +124,36 @@ export const uploadSongCover = (id, formData) => {
     return axios.post(`/api/songs/${id}/cover`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
     });
-  
 };
 
-export const fetchHistory = async () => {
+
+export const fetchSongsByUser = async (userId) => {
+  const res = await axios.get(`/api/users/${userId}/songs`);
+  return res.songs || [];
+};
+
+export const fetchHistory = async (token) => {
     try {
-        // Giả sử bạn đã cấu hình axios để tự động gửi Header Authorization
-        const response = await axios.get('/api/history/get-history'); 
-        return response.data;
+        const response = await axios.get('/api/history', {
+            headers: {
+                // Gắn token vào đây thì server mới nhận diện được
+                Authorization: `Bearer ${token}` 
+            }
+        });
+        return response; 
     } catch (error) {
         console.error("Error fetching history:", error);
         return [];
     }
 };
-export const fetchSongsByUser = async (userId) => {
-  const res = await axios.get(`/api/users/${userId}/songs`);
-  // res lúc này === { songs: [...] }
-  return res.songs || [];
-};
 
+// 2. Hàm lưu lịch sử - Có log để debug
+export const saveToHistory = (songId, token) => {
+    console.log("API Save History - SongID:", songId, "- Token:", token ? "Có" : "Không");
+    
+    return axios.post('/api/history', { songId }, {
+        headers: {
+            Authorization: `Bearer ${token}` // Ép cứng token vào đây
+        }
+    });
+}
