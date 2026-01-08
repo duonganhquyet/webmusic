@@ -174,7 +174,7 @@ const UserProfile = () => {
             <img
               src={
                 user.imgUrl
-                  ? `${import.meta.env.VITE_BACKEND_URL}/images/${user.imgUrl}`
+                  ? `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${user.imgUrl}`
                   : "/default_avatar.png"
               }
               className="profile-avatar"
