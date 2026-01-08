@@ -1,5 +1,5 @@
 // import WavesurferPlayer from '@wavesurfer/react'
-import { PauseCircleFilled, PlayCircleFilled, HeartFilled, HeartOutlined, UserAddOutlined, CheckOutlined } from "@ant-design/icons";
+import { PauseCircleFilled, PlayCircleFilled, HeartFilled, HeartOutlined, UserAddOutlined, CheckOutlined, PlusOutlined } from "@ant-design/icons";
 import { useRef, useState, useMemo, useCallback, useEffect, use } from "react";
 import '../../assets/styles/track.css';
 import { useWavesurfer } from '@wavesurfer/react'
@@ -169,25 +169,40 @@ const WaveTrack = (props) => {
                             <span className="info-track_author">{track?.uploader?.name}</span>
                         </div>
 
-                         {/* === NÚT LIKE (MỚI - ĐẨY SANG PHẢI) === */}
-                         {/* Sử dụng marginLeft: auto để đẩy về cuối flex container (nếu container không dùng justifyContent space-between)
-                             Hoặc nếu muốn nằm cuối "metadata" thì đặt ở đây. 
-                             Dựa vào yêu cầu "Đối ngược với nút play", ta sẽ đẩy nó ra xa nút Play nhất có thể trong container này. */}
-                         {!isOwner && (
-                         <div 
-                            title={isLiked ? "Bỏ thích" : "Thích bài hát"}
-                            style={{ 
-                                cursor: "pointer", 
-                                marginLeft: 'auto', // Tạo khoảng cách với Title/Author
-                                paddingRight: 20,
+                         {/* === CỤM NÚT LIKE & ADD TO PLAYLIST (BÊN PHẢI) === */}
+                         <div style={{ 
+                                marginLeft: 'auto', 
+                                paddingRight: 20, 
                                 display: "flex", 
-                                alignItems: "center" 
-                            }} 
-                            onClick={handleLike}
-                        >
-                            {isLiked ? <HeartFilled style={{fontSize:30,color: "#ff6000"}}/> : <HeartOutlined style={{fontSize:30,color: "#fff"}}/>}
-                        </div>
-                        )}
+                                flexDirection: "column", 
+                                alignItems: "center",
+                                gap: 15 // Khoảng cách giữa tim và dấu cộng
+                            }}>
+                             
+                             {/* Nút Like (Chỉ hiện nếu không phải chủ bài hát) */}
+                             {!isOwner && (
+                                <div 
+                                    title={isLiked ? "Bỏ thích" : "Thích bài hát"}
+                                    style={{ cursor: "pointer" }} 
+                                    onClick={handleLike}
+                                >
+                                    {isLiked ? <HeartFilled style={{fontSize:30,color: "#ff6000"}}/> : <HeartOutlined style={{fontSize:30,color: "#fff"}}/>}
+                                </div>
+                             )}
+
+                             {/* Nút Add to Playlist (Luôn hiện) */}
+                             <div 
+                                title="Thêm vào playlist"
+                                style={{ cursor: "pointer" }}
+                                onClick={() => {
+                                    if(props.onAddPlaylist) props.onAddPlaylist(track);
+                                    else alert("Chức năng thêm vào playlist đang cập nhật!");
+                                }}
+                             >
+                                <PlusOutlined style={{fontSize:30, color: "#fff"}} />
+                             </div>
+
+                         </div>
 
                     </div>
                     <div className="img-wrap">

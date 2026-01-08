@@ -20,7 +20,7 @@ const Header = () => {
     
     const navigate = useNavigate(); 
     const searchRef = useRef(null);
-    const API_BASE = "http://localhost:8080"; // Định nghĩa base URL để dễ quản lý
+    const API_BASE = `${import.meta.env.VITE_BACKEND_URL}`; // Định nghĩa base URL để dễ quản lý
 
     // --- 1. XỬ LÝ LIVE SEARCH ---
     useEffect(() => {
@@ -91,7 +91,7 @@ const Header = () => {
 
     const getAvatarUrl = (imgUrl) => {
          if (!imgUrl || imgUrl === "default_avatar.png") return "/default_avatar.png";
-         return `${import.meta.env.VITE_BACKEND_URL}/images/avatar/${imgUrl}`;
+         return `${import.meta.env.VITE_BACKEND_URL}/images/${imgUrl}`;
     }
 
     return (

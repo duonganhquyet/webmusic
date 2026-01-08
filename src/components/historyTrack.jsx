@@ -6,8 +6,7 @@ import {
   HeartFilled, 
   LoginOutlined 
 } from '@ant-design/icons';
-import { fetchHistory } from '../services/api'; 
-import { useAuthContext } from '../contexts/auth.context';
+import { fetchUserHistory } from '../services/api'; 
 
 const { Text, Link } = Typography;
 
@@ -41,21 +40,20 @@ const MusicWave = () => {
 };
 // ----------------------------------------------------
 
-const HistoryTrack = () => {
+const HistoryTrack = (props) => {
+  const { auth } = props;
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const {auth} = useAuthContext();
-  const token = localStorage.getItem("accessToken"); // Lấy token để gọi API
 
-  useEffect(() => { 
+  useEffect(() => {
     if (auth?.user?._id) {
       setIsLoggedIn(true);
       const getData = async () => {
         try {
-          const result = await fetchHistory(token); 
-          if (Array.isArray(result)) {
-            setSongs(result);
+          const result = await fetchUserHistory(); 
+          if (result && result.data && Array.isArray(result.data.songs)) {
+            setSongs(result.data.songs);
           }
         } catch (error) {
           console.error("Lỗi tải historyTrack:", error);
@@ -105,21 +103,24 @@ const HistoryTrack = () => {
             <List.Item style={{ padding: '8px 0', border: 'none' }}>
               <Flex gap={12} align="center" style={{ width: '100%' }}>
                 
-                <Avatar 
-                  shape="square" 
-                  size={50} 
-                  src={item.imgUrl} 
-                  style={{ minWidth: 50, objectFit: 'cover' }} 
-                />
+                <Link href={`/track/${item.id}`} style={{ minWidth: 50 }}>
+                  <Avatar 
+                    shape="square" 
+                    size={50} 
+                    src={`${import.meta.env.VITE_BACKEND_URL}/images/${item?.image}` || '../../public/default_mp3.jpg'} 
+                    style={{ minWidth: 50, objectFit: 'cover' }} 
+                  />
+                </Link>
 
                 <Flex vertical style={{ flex: 1, overflow: 'hidden' }}>
+                  <Text ellipsis style={{ color: '#fff', fontSize: '13px', marginBottom: 4 }}>
+                    {item.title}
+                  </Text>
+
                   <Text style={{ color: '#999', fontSize: '12px' }}>
                     {item.uploader?.username || "Unknown"}
                   </Text>
                   
-                  <Text ellipsis style={{ color: '#fff', fontSize: '13px', marginBottom: 4 }}>
-                    {item.title}
-                  </Text>
 
                   <Space size={12} style={{ fontSize: '11px', color: '#999' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

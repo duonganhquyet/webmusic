@@ -4,6 +4,7 @@ import WaveTrack from "../components/track/wave.track";
 import { useParams } from "react-router-dom";
 import { checkSongLikeStatus, fetchCommentById, fetchSongById } from "../services/api";
 import { useAuthContext } from "../contexts/auth.context"; //
+import AddToPlaylistModal from "../components/Library/AddToPlaylistModal";
 
 // 1. Import UI Ant Design
 import { Button, message, Tooltip } from "antd";
@@ -15,6 +16,7 @@ const  TrackPage =  ()  =>  {
     const [track,setTrack] = useState(null);
     const [comments,setComments] = useState(null);
     const [isLiked, setIsLiked] = useState(false);
+    const [addPlaylistTrackId, setAddPlaylistTrackId] = useState(null);
 
     const checkLikeStatus = async (songId) => {
         try {
@@ -54,36 +56,51 @@ const  TrackPage =  ()  =>  {
     
     // 2. Hàm xử lý tải file
     const handleDownload = async () => {
+        // Kiểm tra xem dữ liệu bài hát đã tải xong chưa
         if (!track || !track.trackUrl) {
             message.error("Không tìm thấy file nhạc!");
             return;
         }
 
         try {
+            // Hiển thị thông báo đang xử lý
             message.loading("Đang tải xuống...", 1);
             
-            // Đường dẫn file từ backend
-            const fileUrl = `${API_BASE}/track/${track.trackUrl}`;
+            // ✅ Tạo đường dẫn file dựa trên cấu hình static file trong app.js
+            // Backend: app.use('/track', express.static(...));
+            // Dữ liệu: track.trackUrl = "ten-bai-hat.mp3"
+            const fileUrl = `${import.meta.env.VITE_BACKEND_URL}/track/${track.trackUrl}`;
             
-            // Dùng fetch để tải blob về máy (tránh việc trình duyệt tự mở file)
+            // Dùng fetch để lấy dữ liệu dưới dạng Blob (Binary Large Object)
+            // Cách này tốt hơn thẻ <a> bình thường vì nó ép buộc trình duyệt tải xuống thay vì tự mở file để phát
             const response = await fetch(fileUrl);
+            
+
             const blob = await response.blob();
             
+            // Tạo một đường dẫn ảo (Object URL) trỏ tới blob vừa tải
             const url = window.URL.createObjectURL(blob);
+            
+            // Tạo thẻ <a> ẩn để kích hoạt tải xuống
             const link = document.createElement('a');
             link.href = url;
-            // Đặt tên file tải về
-            link.setAttribute('download', track.title ? `${track.title}.mp3` : track.trackUrl); 
             
+            // Đặt tên file khi tải về máy (Ưu tiên dùng Tên bài hát.mp3)
+            const fileName = track.title ? `${track.title}.mp3` : track.trackUrl;
+            link.setAttribute('download', fileName); 
+            
+            // Thêm vào DOM, click, và xóa ngay lập tức
             document.body.appendChild(link);
             link.click();
             link.parentNode.removeChild(link);
+            
+            // Giải phóng bộ nhớ
             window.URL.revokeObjectURL(url);
             
             message.success("Tải xuống hoàn tất!");
         } catch (error) {
             console.error("Lỗi tải file:", error);
-            message.error("Không thể tải file. Hãy thử lại.");
+            message.error("Không thể tải file. Vui lòng thử lại sau.");
         }
     };
 
@@ -122,8 +139,17 @@ const  TrackPage =  ()  =>  {
                     fetchCommentData={fetchCommentData}
                     setIsLiked={setIsLiked}
                     isLiked={isLiked}
+                    onAddPlaylist={(t) => setAddPlaylistTrackId(t._id)}
                 />
             </Container>
+
+             {addPlaylistTrackId && (
+                <AddToPlaylistModal
+                    trackId={addPlaylistTrackId}
+                    onClose={() => setAddPlaylistTrackId(null)}
+                    onAdded={() => setAddPlaylistTrackId(null)}
+                />
+            )}
         </>
     )
 }

@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import "../assets/SearchPage.css"; 
 import { resolveAssetUrl } from "../utils/url";
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = `${import.meta.env.VITE_BACKEND_URL}`;
 
 export default function SearchPage() {
   const [searchParams] = useSearchParams();

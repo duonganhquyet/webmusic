@@ -8,7 +8,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { useAuthContext } from '../contexts/auth.context';
 import { resolveAssetUrl } from '../utils/url';
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = `${import.meta.env.VITE_BACKEND_URL}`;
 
 const Home = () => {
   const [data, setData] = useState({ topSongs: [], allSongs: [] });
@@ -154,7 +154,7 @@ const Home = () => {
 
         {/* === CỘT PHẢI === */}
         <div style={{ flex: 1, minWidth: '280px', marginTop: '60px' }}>
-           <HistoryTrack />
+           <HistoryTrack auth={auth}/>
         </div>
         
       </div>

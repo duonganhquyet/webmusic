@@ -6,7 +6,7 @@ import { resolveAssetUrl } from "../utils/url";
 // ✅ 1. Import hệ thống thông báo
 import { notifySuccess, notifyError } from "../utils/notification";
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = `${import.meta.env.VITE_BACKEND_URL}`;
 
 const GENRES = [
   "Pop", "Ballad", "Rap/Hip-hop", "R&B", "EDM", 

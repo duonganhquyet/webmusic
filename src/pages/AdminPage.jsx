@@ -20,7 +20,7 @@ import { notifySuccess, notifyError } from '../utils/notification';
 const { Sider, Content } = Layout;
 const { Option } = Select;
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = `${import.meta.env.VITE_BACKEND_URL}`;
 
 // Style cho input để không bị lỗi nền đen chữ đen
 const inputStyle = { backgroundColor: '#ffffff', color: '#000000' };

@@ -9,7 +9,7 @@ import { uploadSong } from "../services/api";
 // ✅ 1. Import hệ thống thông báo
 import { notifySuccess, notifyError, notifyWarning } from "../utils/notification";
 
-const API_BASE = "http://localhost:8080";
+const API_BASE = `${import.meta.env.VITE_BACKEND_URL}`;
 const MAX_RECORD_SECONDS = 600; // 10 phút
 
 function formatTime(seconds) {

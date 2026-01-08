@@ -142,15 +142,6 @@ export const clearUserHistory = () => {
     return axios.delete(urlBackend);
 }
 
-export const fetchHistory = async () => {
-    try {
-        const response = await axios.get('/api/history/get-history'); 
-        return response.data;
-    } catch (error) {
-        console.error("Error fetching history:", error);
-        return [];
-    }
-}
 
 /* ========================= UPLOAD & SEARCH ========================= */
 export const searchSongs = (query) => {

@@ -5,6 +5,7 @@ import { Row, Col, Input, Typography, Space, Avatar, Button } from "antd";
 import { UserAddOutlined, CheckOutlined } from "@ant-design/icons";
 import { useAuthContext } from "../../contexts/auth.context";
 import { postCommentAPI, followUserAPI, checkFollowStatusAPI } from "../../services/api";
+import { Link } from "react-router-dom";
 
 dayjs.extend(relativeTime);
 
@@ -107,21 +108,23 @@ const CommentTrack = (props) => {
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={6} xl={4}>
             <div style={{display: "flex",alignContent: "center",flexDirection: "column"}}>
-              <img
-                src={(track?.uploader?.imgUrl && track?.uploader?.imgUrl !== "default_avatar.png") 
-                                    ? `${import.meta.env.VITE_BACKEND_URL}/images/${track?.uploader?.imgUrl}` 
-                                    : "../../../public/default_avatar.png"}
-                alt="Lỗi tải ảnh"
-                width={150}
-                height={150}
-                style={{ objectFit: "cover", borderRadius: "50%", alignSelf: "center" }}
-              />
+              <Link to={`/user/${track?.uploader?._id}`}>
+                <img
+                  src={(track?.uploader?.imgUrl && track?.uploader?.imgUrl !== "default_avatar.png") 
+                                      ? `${import.meta.env.VITE_BACKEND_URL}/images/${track?.uploader?.imgUrl}` 
+                                      : "../../../public/default_avatar.png"}
+                  alt="Lỗi tải ảnh"
+                  width={150}
+                  height={150}
+                  style={{ objectFit: "cover", borderRadius: "50%", alignSelf: "center" }}
+                />
+              </Link>
               <div style={{ marginTop: 8, textAlign: "center" }}>
-                <Text>{track?.uploader?.name}</Text>
+                <Link to={`/user/${track?.uploader?._id}`}><Text style={{marginLeft:-30, fontWeight: 700}}>{track?.uploader?.name}</Text></Link>
                  
                  {/* === NÚT FOLLOW (MỚI) === */}
                  {track?.uploader?._id !== auth?.user?._id && (
-                    <div style={{ marginTop: 5 }}>
+                    <div style={{ marginTop: 5,marginLeft: -30 }}>
                         <Button
                             type={isFollowed ? "primary" : "default"}
                             icon={isFollowed ? <CheckOutlined /> : <UserAddOutlined />}
