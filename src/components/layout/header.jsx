@@ -113,7 +113,7 @@ const Header = () => {
                             onFocus={() => { if(suggestions.length > 0) setShowDropdown(true) }}
                         />
                         <button type="submit" className="search-btn">
-                            <FaSearch />
+                            <FaSearch/>
                         </button>
                     </form>
 

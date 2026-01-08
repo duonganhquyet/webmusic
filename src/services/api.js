@@ -149,3 +149,24 @@ export const uploadSong = async (formData) => {
     });
 }
 
+export const updateHistoryAPI = (trackId) => {
+    const urlBackend = `/api/history/add/${trackId}`;
+    return axios.post(urlBackend);
+}
+
+export const checkSongLikeStatus = (songId) => {
+    const urlBackend = `/api/song/${songId}/like/status`;
+    return axios.get(urlBackend,{
+        params: {id: songId}
+    });
+}
+
+export const checkFollowStatusAPI = (userId) => {
+    const urlBackend = `/api/follow/status/${userId}`;
+    return axios.get(urlBackend);
+}
+
+export const followUserAPI = (followingId) => {
+    const urlBackend = `/api/follow/${followingId}`;
+    return axios.post(urlBackend);
+}

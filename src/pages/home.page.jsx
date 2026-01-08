@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Pagination } from 'antd'; 
 import Card from '../components/Card';
 import HistoryTrack from '../components/historyTrack';
-import { fetchHomeData } from '../services/api';
+import { fetchHomeData, updateHistoryAPI } from '../services/api';
 import { Link, NavLink } from 'react-router-dom';
 import { useAuthContext } from '../contexts/auth.context';
 
@@ -14,7 +14,7 @@ const Home = () => {
   // 1. Khởi tạo state
   const [data, setData] = useState({ topSongs: [], allSongs: [] });
   const {auth} = useAuthContext();
-  const isLoggedIn = !!(auth && auth.user && auth.user._id);
+  const isLoggedIn = !!(auth && auth?.user && auth?.user._id);
   const [loading, setLoading] = useState(true); 
   
   // 2. State quản lý phân trang
@@ -85,6 +85,14 @@ const Home = () => {
       section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
+  const handleUpdateHistory = async (trackId) => {
+    try {
+        // Gọi API để cập nhật lịch sử nghe
+        const response = await updateHistoryAPI(trackId);
+    } catch (error) {
+        console.error("Lỗi cập nhật lịch sử nghe:", error);
+    }
+  };
 
   // Hàm lấy phụ đề an toàn
   const getSubtitle = (item) => {
@@ -122,13 +130,14 @@ const Home = () => {
                  <p style={{color: '#888'}}>Đang tải dữ liệu...</p>
               ) : data.topSongs.length > 0 ? (
                 data.topSongs.map((item) => (
-                  <Link to={`/track/${item._id}`} key={item._id} style={{ textDecoration: 'none' }}>
+                  <Link to={`/track/${item._id}`} key={item._id} style={{ textDecoration: 'none' }} onClick={() => {if(isLoggedIn) handleUpdateHistory(item._id);}}>
                     <Card 
                       id={item._id} 
                       // ✅ Áp dụng hàm xử lý ảnh ở đây
                       image={getImageUrl(item.imgUrl)} 
                       title={item.title} 
                       subtitle={getSubtitle(item)} 
+                      
                     />
                   </Link>
                 ))
